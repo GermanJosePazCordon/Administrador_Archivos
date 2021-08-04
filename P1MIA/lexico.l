@@ -19,13 +19,13 @@
 
 
 numero [0-9]+
-letra [a-zA-ZÑñáéíóúÁÉÍÓÚ]+
+letra [a-zA-ZÑñáéíóúÁÉÍÓÚ]
 positivo ([1-9]|0?)+
 
 
-identificador {letra}({letra}|numero|"_")*
+identificador {letra}({letra}|{numero}|"_")*
 caracter "\'"("\\")?({letra}|numero)"\'"
-cadena \"(\\\"|\\n|\\t|\\r|\\\\|[^\"])*\"
+cadena [\"][^\"\n]*[\"\n]
 ruta (([/]([a-zA-Z]|[0-9]|"_"|".")+)+)
 
 %x COM
@@ -35,9 +35,14 @@ ruta (([/]([a-zA-Z]|[0-9]|"_"|".")+)+)
 
 "MKDISK" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return MKDISK;}
 "RMDISK" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return RMDISK;}
+"FDISK" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return FDISK;}
 
 "SIZE" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return SIZE;}
 "PATH" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return PATH;}
+"TYPE" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return TYPE;}
+"NAME" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return NAME;}
+"ADD" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return ADD;}
+"DELETE" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return DELETE;}
 
 "U" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return letU;}
 "F" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return letF;}
@@ -53,7 +58,6 @@ ruta (([/]([a-zA-Z]|[0-9]|"_"|".")+)+)
 
 "=" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return IGUAL;}
 "-" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return MENOS;}
-"\\\"" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return COMILLA;}
 
 "\n" {linea++; columna=0; anterior=0;}
 [[:blank:]] { columna++; }

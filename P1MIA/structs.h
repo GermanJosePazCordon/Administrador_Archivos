@@ -8,20 +8,20 @@ using namespace std;
 class Structs{
 public:
     typedef struct{ //Struct de la particion principal y extendida
-            char part_status = 'i'; //i de inhabilitado a habilitado
-            char part_type = 'x';
-            char part_fit;
-            int part_start;
-            int part6_size;
-            char part_name[16];
+            char status = 'i'; //i de inhabilitado a habilitado
+            char type = 'x';
+            char fit;
+            int start;
+            int size;
+            char name[16];
 
         } partition;
 
     typedef struct //MBR para los discos
         {
             int size;
-            char date[16];
-            char fit[1];
+            time_t date;
+            char fit;
             int signature;
             partition particiones[4];
 

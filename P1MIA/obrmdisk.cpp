@@ -12,7 +12,12 @@ obrmdisk::obrmdisk()
 //--------------------------SETERS-----------------------------------
 
 void obrmdisk::setPath(string path){
-    this->path = path;
+    if(path[0] == '"'){
+        this->path = path.substr(1, path.size()-1);
+        this->path = this->path.substr(0, this->path.size()-1);
+    }else{
+        this->path = path;
+    }
 }
 
 void obrmdisk::exec(){
@@ -36,6 +41,3 @@ void obrmdisk::exec(){
         }
     }
 }
-
-
-

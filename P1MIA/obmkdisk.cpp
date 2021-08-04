@@ -37,19 +37,28 @@ void obmkdisk::setUnit(string unit){
 }
 
 void obmkdisk::setPath(string path){
-    this->path = path;
+    if(path[0] == '"'){
+        this->path = path.substr(1, path.size()-1);
+        this->path = this->path.substr(0, this->path.size()-1);
+    }else{
+        this->path = path;
+    }
 }
 
 void obmkdisk::mostrardatos(Structs::MBR mbr){
+    char date[16];
+    strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&mbr.date));
+
     cout<<"\n-------------DISCO CREADO--------------------"<<endl;
+    cout<<"Date: " <<date<<endl;
     cout<<"Signature: "<<mbr.signature <<endl;
     cout<<"Tamaño: "<<mbr.size <<endl;
     cout<<"Fit: " <<mbr.fit <<endl;
-
+    cout << "Size of mbr :" << sizeof(mbr) << endl;
 }
 
 bool obmkdisk::validarParametros(){
-    if(this->size == 0){
+    if(this->size <= 0){
         cout<<"\nTamaño incorrecto de disco."<<endl;
         return true;
     }
@@ -64,7 +73,7 @@ bool obmkdisk::validarParametros(){
         }
     }
     if(this->fit != ""){
-        if(this->fit != "b" && this->fit != "f" && this->fit != "w"){
+        if(this->fit != "bf" && this->fit != "ff" && this->fit != "wf"){
             cout<<"\nFit invalido."<<endl;
             return true;
         }
@@ -76,9 +85,7 @@ void obmkdisk::exec(){
     if(validarParametros()){
         cout<<"\nNo se pudo crear el disco."<<endl;
     }else{
-        //cout<<this->path<<endl;
         init();
-        //mostrardatos();
     }
 }
 
@@ -88,7 +95,7 @@ void obmkdisk::init(){
     FILE *file = NULL;
     file = fopen(charPath, "r");
     if(file != NULL){
-        cout<<"Ya existe el disco"<<endl;
+        cout<<"\nYa existe el disco"<<endl;
         return;//error
     }else{
         string create = "mkdir -p \"" + this->path + "\"";
@@ -107,12 +114,25 @@ void obmkdisk::init(){
     fwrite("\0", 1, 1, file);
     fseek(file, size, SEEK_SET);
     fwrite("\0", 1, 1, file);
-    fclose(file);
+
+
     Structs::MBR mbr;
     mbr.size = size;
     mbr.signature = rand()%1000;
-    strcpy(mbr.fit,this->fit.c_str());
+    if (this->fit == "wf") {
+      mbr.fit = 'w';
+    } else if (this->fit == "ff") {
+      mbr.fit = 'f';
+    } else {
+      mbr.fit = 'b';
+    }
+    mbr.date = time(0);
+
     mostrardatos(mbr);
+
+    fseek(file, 0, SEEK_SET);
+    fwrite(&mbr, sizeof(Structs::MBR), 1, file);
+    fclose(file);
 }
 
 

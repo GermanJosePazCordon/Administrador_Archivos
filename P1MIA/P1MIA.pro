@@ -13,7 +13,8 @@ SOURCES += main.cpp \
     obmkdisk.cpp \
     parser.cpp \
     scanner.cpp \
-    obrmdisk.cpp
+    obrmdisk.cpp \
+    obfdisk.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -36,7 +37,8 @@ HEADERS += \
     parser.h \
     scanner.h \
     structs.h \
-    obrmdisk.h
+    obrmdisk.h \
+    obfdisk.h
 
 SUBDIRS += \
     P1MIA.pro
