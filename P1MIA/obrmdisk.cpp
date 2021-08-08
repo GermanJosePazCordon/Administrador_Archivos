@@ -30,10 +30,16 @@ void obrmdisk::exec(){
         FILE *file = NULL;
         file = fopen(charPath, "r");
         if(file != NULL){
-            string path = "rm \"" + this->path + "\"";
-            system(path.c_str());
-            cout << "\nSe elimino el disco : " << this->path << endl;
-            fclose(file);
+            cout<<"\nSe ha encontrado el disco"<<endl;
+            cout<<"\nDesea eliminarlo? [s/n]"<<endl;
+            char op;
+            cin >> op;
+            if(op == 's'){
+                string path = "rm \"" + this->path + "\"";
+                system(path.c_str());
+                cout << "\nSe elimino el disco : " << this->path << endl;
+                fclose(file);
+            }
             return;
         }else{
             cout << "\nEl disco no existe." << endl;

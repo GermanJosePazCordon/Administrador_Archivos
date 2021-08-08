@@ -127,6 +127,14 @@ void obmkdisk::init(){
       mbr.fit = 'b';
     }
     mbr.date = time(0);
+    for(int i = 0; i < 4; i++){
+        mbr.particiones[i].status = 'i';
+        mbr.particiones[i].size = 0;
+        mbr.particiones[i].fit = mbr.fit;
+        mbr.particiones[i].start = size;
+        mbr.particiones[i].type = 'x';
+        strcpy(mbr.particiones[i].name,"");
+    }
 
     mostrardatos(mbr);
 

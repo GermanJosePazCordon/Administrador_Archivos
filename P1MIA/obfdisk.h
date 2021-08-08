@@ -15,10 +15,10 @@ public:
 
     int size = 0;
     int add = 0;
-    string fit = "";
-    string unit = "";
+    string fit = "wf";
+    string unit = "k";
+    string type = "p";
     string path = "";
-    string type = "";
     string delet = "";
     string name = "";
 
@@ -38,15 +38,29 @@ public:
 
     void setName(string name);
 
+    char getFit(string fit);
+
+    char getType(string type);
+
     void exec();
 
     void init();
 
     bool validarParametros();
 
-    void getMBR(string path);
+    bool getMBR(string path);
+
+    void saveMBR(Structs::MBR);
 
     void createPartition();
+
+    void deletePartition();
+
+    void bubbleSort();
+
+    bool validarTipo();
+
+    void caso1();
 
 };
 
