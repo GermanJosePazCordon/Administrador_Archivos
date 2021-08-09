@@ -75,11 +75,6 @@ void obfdisk::setName(string name){
 }
 
 bool obfdisk::validarParametros(){
-    if(this->unit == "k"){
-        this->size = this->size * 1024;
-    }else if(this->unit == "m"){
-        this->size = this->size * 1024 * 1024;
-    }
     if(this->path == ""){
         cout<<"\nRuta vacia."<<endl;
         return true;
@@ -99,6 +94,11 @@ bool obfdisk::validarParametros(){
             cout<<"\nUnidad invalida."<<endl;
             return true;
         }
+    }
+    if(this->unit == "k"){
+        this->size = this->size * 1024;
+    }else if(this->unit == "m"){
+        this->size = this->size * 1024 * 1024;
     }
     if(this->type != ""){
         if(this->type != "p" && this->type != "e" && this->type != "l"){
@@ -172,6 +172,18 @@ void obfdisk::saveMBR(Structs::MBR mbr){
     fclose(file);
 }
 
+void obfdisk::saveEBR(Structs::EBR){}
+
+void obfdisk::newPartition(int pos, char status, char type, char fit, int start, int size, string name){
+    this->mbr.particiones[pos].status = status;
+    this->mbr.particiones[pos].type = type;
+    this->mbr.particiones[pos].fit = fit;
+    this->mbr.particiones[pos].size = 0;
+    this->mbr.particiones[pos].start = start;
+    this->mbr.particiones[pos].size = size;
+    strcpy(this->mbr.particiones[pos].name, name.c_str());
+}
+
 char obfdisk::getFit(string fit){
     if(fit == "bf"){
         return 'b';
@@ -183,12 +195,12 @@ char obfdisk::getFit(string fit){
 }
 
 char obfdisk::getType(string type){
-    if(fit == "b"){
-        return 'b';
-    }else if(fit == "k"){
-        return 'k';
+    if(type == "p"){
+        return 'p';
+    }else if(type == "e"){
+        return 'e';
     }else{
-        return 'm';
+        return 'l';
     }
 }
 
@@ -237,12 +249,7 @@ void obfdisk::deletePartition(){
     char op;
     cin >> op;
     if(op == 's'){
-        this->mbr.particiones[pos].status = 'i';
-        this->mbr.particiones[pos].size = 0;
-        this->mbr.particiones[pos].fit = this->mbr.fit;
-        this->mbr.particiones[pos].start = this->mbr.size;
-        this->mbr.particiones[pos].type = 'x';
-        strcpy(this->mbr.particiones[pos].name,"");
+        newPartition(pos, 'i', 'x', this->mbr.fit, this->mbr.size, 0, "");
         saveMBR(this->mbr);
         return;
     }else{
@@ -267,27 +274,41 @@ void obfdisk::bubbleSort(){
 
 void obfdisk::createPartition(){
     bool name = false;
+    int activas = 0;
     for(int i = 0; i < 4; i++){
+        //VALIDANDO SI EL NOMBRE YA EXISTE
         if(this->mbr.particiones[i].name == this->name){
             name = true;
+        }
+         //REVISANDO SI HAY POR LO MENOS UNA PARTICION ACTIVA
+        if(this->mbr.particiones[i].status == 'h'){
+            activas += 1;
         }
     }
     if(name){
         cout<<"\nYa existe una particion con el nombre : "<<this->name<<endl;
         return;
     }
-    int activas = 0;
-    for(int i = 0; i < 4; i++){
-        if(this->mbr.particiones[i].status == 'h'){
-            activas += 1;
-        }
-    }
+    /*if(this->type == 'l'){
+
+    }*/
     if(activas == 0){
-        caso1(); // CASO DONDE NO HAY NINGUNA PARTICION ACTIVA
+        // CASO DONDE NO HAY NINGUNA PARTICION ACTIVA
+        int sizeDisponible = this->mbr.size - sizeof(this->mbr);
+        if(this->size > sizeDisponible){
+            cout<<"\nEspacio insuficiente"<<endl;
+            return;
+        }
+        newPartition(0, 'h', getType(this->type), getFit(this->fit), sizeof(Structs::MBR), this->size, this->name);
+        saveMBR(this->mbr);
+        if(this->type == 'e'){
+            firstEBR('i', getFit(this->fit), sizeof(Structs::MBR), this->size, this->name, -1);
+        }
         return;
     }else{
         bubbleSort();
         int tmp_space;
+        int ant_space = 0;
         if(this->mbr.particiones[0].start == sizeof(Structs::MBR)){//CASO DONDE LA PRIMER PARTICION ESTA JUNTO CON EL MBR, ES DECIR NO HAY ESPACIO LIBRE
             for(int i = 1; i < 4; i++){
                 //VERIFICA SI LA PARTICION ESTA JUNTO A LA ANTERIOR, ES DECIR SIN ESPACIOS LIBRES ENTRE ELLAS
@@ -295,13 +316,13 @@ void obfdisk::createPartition(){
                     //SI LA PARTICION ES NULA SIGNIFICA QUE NO HAY MAS PARTICIONES DESPUES DE ESTA POR LO QUE AGREGA LA NUEVA PARTICION SIN ESPACIO LIBRE
                     tmp_space = this->mbr.size - ( this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size );
                     if(this->size <= tmp_space){
-                        strcpy(this->mbr.particiones[i].name, this->name.c_str());
-                        this->mbr.particiones[i].fit = getFit(this->fit);
-                        this->mbr.particiones[i].start = (this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size);
-                        this->mbr.particiones[i].size = this->size;
-                        this->mbr.particiones[i].type = getType(this->type);
-                        this->mbr.particiones[i].status = 'h';
+                        int start = (this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size);
+                        cout<<"\nstart : "<<start<<endl;
+                        newPartition(i, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
                         saveMBR(this->mbr);
+                        if(this->type == 'e'){
+                            firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                        }
                         return;
                     }else{
                         cout<<"\nEspacio insuficiente"<<endl;
@@ -309,7 +330,56 @@ void obfdisk::createPartition(){
                         return;
                     }
                 }
-                //SI LA PARTICION ESTA ACTIVA HAY QUE VERIFICAR SI HAY ESPACIO LIBRE CON LA ANTERIOR
+                //SI LA PARTICION ESTA ACTIVA HAY QUE VERIFICAR SI HAY ESPACIO LIBRE CON LA ANTERIOR, 0 = NO HAY ESPACIO LIBRE,
+                tmp_space = this->mbr.particiones[i].start - ( this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size );
+                if(tmp_space != 0){
+                    if(this->fit == "ff"){
+                        if(this->size <= tmp_space){
+                            int start = (this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size);
+                            newPartition(3, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
+                            bubbleSort();
+                            saveMBR(this->mbr);
+                            if(this->type == 'e'){
+                                firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                            }
+                            return;
+                        }
+                    }else{
+                        if(this->size <= tmp_space){
+                            //SI EL ESPACIO ANTERIOR ES CERO SIGNIFICA QUE ES EL PRIMER ESPACIO EN GUARDASR
+                            if(ant_space == 0){
+                                ant_space = tmp_space;
+                                break;
+                            }else{
+                                //SI EL ESPACIO ANTERIOR ES MENOR QUE EL TEMPORAL SE TIENE QUE SUSTITUIR POR SER WORST FIT, Y AL CONTRARIO PARA EL MEJRO FIT
+                                if(this->fit == "wf"){
+                                    if(ant_space < tmp_space){
+                                        ant_space = tmp_space;
+                                    }
+                                }else{
+                                    if(ant_space > tmp_space){
+                                        ant_space = tmp_space;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            //UNA VEZ SE TIENE EL ESPACIO DONDE CREAR LA PARTICION SE RECORREN LOS ESPACIOS DE NUEVO PARA ENCONTRAR SU POSICION Y CREAR LA PARTICION ALLI
+            for(int i = 1; i < 4; i++){
+                tmp_space = this->mbr.particiones[i].start - ( this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size );
+                if(tmp_space == ant_space){
+                    int start = this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size;
+                    newPartition(3, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
+                    bubbleSort();
+                    saveMBR(this->mbr);
+                    if(this->type == 'e'){
+                        firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                    }
+                    ant_space = 0;
+                    return;
+                }
             }
         }
         //CASO DONDE EXISTE ESPACIO LIBRE ENTRE EL MBR Y LA PRIMER PARTICION
@@ -317,12 +387,7 @@ void obfdisk::createPartition(){
         if(this->fit == "ff"){
             //FIRST FIT, SOLAMENTE VERIFICAR SI ENTRA EN EL ESPACIO LIBRE, EN CASO CONTRARIO BUSCAR OTRO LUGAR
             if(this->size <= tmp_space){
-                strcpy(this->mbr.particiones[3].name, this->name.c_str());
-                this->mbr.particiones[3].fit = getFit(this->fit);
-                this->mbr.particiones[3].start = sizeof(Structs::MBR);
-                this->mbr.particiones[3].size = this->size;
-                this->mbr.particiones[3].type = getType(this->type);
-                this->mbr.particiones[3].status = 'h';
+                newPartition(3, 'h', getType(this->type), getFit(this->fit), sizeof(Structs::MBR), this->size, this->name);
                 bubbleSort();
                 saveMBR(this->mbr);
                 return;
@@ -331,30 +396,27 @@ void obfdisk::createPartition(){
                     //CUANDO ENCONTRAMOS LA PARTICION INHABILITADA UTILIZAMOS LA ANTERIOR PARA CALCULAR EL ESPACIO DISPONIBLE
                     if(this->mbr.particiones[i].status == 'i'){
                         tmp_space = this->mbr.size - (this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size);
-                        cout<<"\ntmp_space = "<<this->mbr.size<<" - ("<<this->mbr.particiones[i-1].start<<" + "<<this->mbr.particiones[i-1].size<<endl;
                         if(this->size <= tmp_space){
-                            strcpy(this->mbr.particiones[3].name, this->name.c_str());
-                            this->mbr.particiones[3].fit = getFit(this->fit);
-                            this->mbr.particiones[3].start = (this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size);
-                            this->mbr.particiones[3].size = this->size;
-                            this->mbr.particiones[3].type = getType(this->type);
-                            this->mbr.particiones[3].status = 'h';
+                            int start = (this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size);
+                            newPartition(3, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
                             bubbleSort();
                             saveMBR(this->mbr);
+                            if(this->type == 'e'){
+                                firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                            }
                             return;
                         }
                     }else{
                         if(i != 2){
                             tmp_space = this->mbr.particiones[i+1].start - this->mbr.particiones[i].start;
                             if(this->size <= tmp_space){
-                                strcpy(this->mbr.particiones[3].name, this->name.c_str());
-                                this->mbr.particiones[3].fit = getFit(this->fit);
-                                this->mbr.particiones[3].start = (this->mbr.particiones[i].start + this->mbr.particiones[i].size);
-                                this->mbr.particiones[3].size = this->size;
-                                this->mbr.particiones[3].type = getType(this->type);
-                                this->mbr.particiones[3].status = 'h';
+                                int start = (this->mbr.particiones[i].start + this->mbr.particiones[i].size);
+                                newPartition(3, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
                                 bubbleSort();
                                 saveMBR(this->mbr);
+                                if(this->type == 'e'){
+                                    firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                                }
                                 return;
                             }
                         }
@@ -364,22 +426,100 @@ void obfdisk::createPartition(){
                 cout<<"\nNo pudo crearse la particion"<<endl;
                 return;
             }
+        }else{
+            if(this->size <= tmp_space ){
+                ant_space = tmp_space;
+            }else{
+                ant_space = 0;
+            }
+            for(int i = 1; i < 4; i++){
+                if(this->mbr.particiones[i].status == 'i'){
+                    tmp_space = this->mbr.size - ( this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size );
+                    if(this->size <= tmp_space){
+                        //SI EL ESPACIO ANTERIOR ES CERO SIGNIFICA QUE ES EL PRIMER ESPACIO EN GUARDASR
+                        if(ant_space == 0){
+                            ant_space = tmp_space;
+                            break;
+                        }else{
+                            //SI EL ESPACIO ANTERIOR ES MENOR QUE EL TEMPORAL SE TIENE QUE SUSTITUIR POR SER WORST FIT
+                            if(this->fit == "wf"){
+                                if(ant_space < tmp_space){
+                                    ant_space = tmp_space;
+                                }
+                            }else{
+                                if(ant_space > tmp_space){
+                                    ant_space = tmp_space;
+                                }
+                            }
+                        }
+                    }
+                }else{
+                    tmp_space = this->mbr.particiones[i].start - ( this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size );
+                    if(tmp_space != 0){
+                        if(this->size <= tmp_space){
+                            //SI EL ESPACIO ANTERIOR ES CERO SIGNIFICA QUE ES EL PRIMER ESPACIO EN GUARDASR
+                            if(ant_space == 0){
+                                ant_space = tmp_space;
+                                break;
+                            }else{
+                                //SI EL ESPACIO ANTERIOR ES MENOR QUE EL TEMPORAL SE TIENE QUE SUSTITUIR POR SER WORST FIT
+                                if(this->fit == "wf"){
+                                    if(ant_space < tmp_space){
+                                        ant_space = tmp_space;
+                                    }
+                                }else{
+                                    if(ant_space > tmp_space){
+                                        ant_space = tmp_space;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if(ant_space == 0){
+                cout<<"\nEspacio insuficiente"<<endl;
+                cout<<"\nNo pudo crearse la particion"<<endl;
+                return;
+            }
+            tmp_space = this->mbr.particiones[0].start - sizeof(Structs::MBR);
+            if(ant_space == tmp_space){
+                newPartition(3, 'h', getType(this->type), getFit(this->fit), sizeof(Structs::MBR), this->size, this->name);
+                bubbleSort();
+                saveMBR(this->mbr);
+                if(this->type == 'e'){
+                    firstEBR('i', getFit(this->fit), sizeof(Structs::MBR), this->size, this->name, -1);
+                }
+                ant_space = 0;
+                return;
+            }else{
+                for(int i = 1; i < 4; i++){
+                    tmp_space = this->mbr.particiones[i].start - ( this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size );
+                    if(tmp_space == ant_space){
+                        int start = this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size;
+                        newPartition(3, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
+                        bubbleSort();
+                        saveMBR(this->mbr);
+                        if(this->type == 'e'){
+                            firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                        }
+                        ant_space = 0;
+                        return;
+                    }
+                }
+            }
         }
     }
     return;
 }
 
-void obfdisk::caso1(){
-    int sizeDisponible = this->mbr.size - sizeof(this->mbr);
-    if(this->size > sizeDisponible){
-        cout<<"\nEspacio insuficiente"<<endl;
-        return;
-    }
-    strcpy(this->mbr.particiones[0].name, this->name.c_str());
-    this->mbr.particiones[0].fit = getFit(this->fit);
-    this->mbr.particiones[0].start = sizeof(Structs::MBR);
-    this->mbr.particiones[0].size = this->size;
-    this->mbr.particiones[0].type = getType(this->type);
-    this->mbr.particiones[0].status = 'h';
-    saveMBR(this->mbr);
+void obfdisk::firstEBR(char status, char fit, int start, int size, string name, int next){
+    Structs::EBR ebr;
+    ebr.status = status;
+    ebr.fit = fit;
+    ebr.start = start;
+    ebr.size = size;
+    strcpy(ebr.name, name);
+    ebr.next = next;
+    saveEBR(ebr);
 }

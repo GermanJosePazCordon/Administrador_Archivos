@@ -52,6 +52,10 @@ public:
 
     void saveMBR(Structs::MBR);
 
+    void saveEBR(Structs::EBR);
+
+    void newPartition(int pos, char status, char type, char fit, int start, int size, string name);
+
     void createPartition();
 
     void deletePartition();
@@ -60,7 +64,7 @@ public:
 
     bool validarTipo();
 
-    void caso1();
+    void firstEBR(char status, char fit, int start, int size, string name, int next);
 
 };
 
