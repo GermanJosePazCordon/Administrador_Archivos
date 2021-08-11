@@ -50,21 +50,29 @@ public:
 
     bool getMBR(string path);
 
+    Structs::EBR getEBR(string path, int pos);
+
     void saveMBR(Structs::MBR);
 
-    void saveEBR(Structs::EBR);
+    void saveEBR(Structs::EBR, int pos);
+
+    void modifyEBR(Structs::EBR ebr);
 
     void newPartition(int pos, char status, char type, char fit, int start, int size, string name);
 
     void createPartition();
 
+    void createLogicPartition();
+
     void deletePartition();
+
+    void deleteLogic();
 
     void bubbleSort();
 
     bool validarTipo();
 
-    void firstEBR(char status, char fit, int start, int size, string name, int next);
+    void newEBR(char status, char fit, int start, int size, string name, int next, int pos);
 
 };
 

@@ -65,11 +65,6 @@ void obfdisk::setName(string name){
         this->name = name.substr(1, path.size()-1);
         this->name = this->name.substr(0, this->name.size()-1);
     }else{
-        string data = name;
-        std::transform(data.begin(), data.end(), data.begin(),
-            [](unsigned char c){ return std::tolower(c); });
-        name = data;
-        //this->delet = delet;
         this->name = name;
     }
 }
@@ -132,8 +127,12 @@ bool obfdisk::validarTipo(){
         }
     }
     int tmp = primaria + extendida;
+    if(delet != ""){
+        return false;
+    }
     if(tmp == 4 && this->type != "l"){
         cout<<"\nNumero maximo de particiones creadas"<<endl;
+
         return true;
     }
     if(this->type == "e" && extendida == 1){
@@ -146,6 +145,8 @@ bool obfdisk::validarTipo(){
     }
     return false;
 }
+
+//--------------------------GETERS-----------------------------------
 
 bool obfdisk::getMBR(string path){
     Structs::MBR tmp_mbr;
@@ -162,26 +163,14 @@ bool obfdisk::getMBR(string path){
     }
 }
 
-void obfdisk::saveMBR(Structs::MBR mbr){
-    char charPath[this->path.size() + 1];
-    strcpy(charPath, this->path.c_str());
-    FILE *file = NULL;
-    file = fopen(charPath, "wb");
-    fseek(file, 0, SEEK_SET);
-    fwrite(&mbr, sizeof(Structs::MBR), 1, file);
+Structs::EBR obfdisk::getEBR(string path, int pos){
+    Structs::EBR tmp_ebr;
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fread(&tmp_ebr, sizeof(Structs::EBR), 1, file);
     fclose(file);
-}
-
-void obfdisk::saveEBR(Structs::EBR){}
-
-void obfdisk::newPartition(int pos, char status, char type, char fit, int start, int size, string name){
-    this->mbr.particiones[pos].status = status;
-    this->mbr.particiones[pos].type = type;
-    this->mbr.particiones[pos].fit = fit;
-    this->mbr.particiones[pos].size = 0;
-    this->mbr.particiones[pos].start = start;
-    this->mbr.particiones[pos].size = size;
-    strcpy(this->mbr.particiones[pos].name, name.c_str());
+    return tmp_ebr;
 }
 
 char obfdisk::getFit(string fit){
@@ -204,6 +193,64 @@ char obfdisk::getType(string type){
     }
 }
 
+//--------------------------SAVE-----------------------------------
+
+void obfdisk::saveMBR(Structs::MBR mbr){
+    char charPath[this->path.size() + 1];
+    strcpy(charPath, this->path.c_str());
+    FILE *file = NULL;
+    file = fopen(charPath, "rb+");
+    fseek(file, 0, SEEK_SET);
+    fwrite(&mbr, sizeof(Structs::MBR), 1, file);
+    fclose(file);
+}
+
+void obfdisk::saveEBR(Structs::EBR ebr, int pos){
+    char charPath[this->path.size() + 1];
+    strcpy(charPath, this->path.c_str());
+    FILE *file = NULL;
+    file = fopen(charPath, "rb+");
+    fseek(file, pos, SEEK_SET);
+    fwrite(&ebr, sizeof(Structs::EBR), 1, file);
+    fclose(file);
+}
+
+void obfdisk::modifyEBR(Structs::EBR ebr){
+    ebr.fit = getFit(this->fit);
+    strcpy(ebr.name, this->name.c_str());
+    ebr.size = this->size;
+    ebr.start = ebr.start + sizeof(Structs::EBR);
+    ebr.status = 'h';
+    ebr.next = ebr.start + ebr.size;
+    saveEBR(ebr, ebr.start - sizeof(Structs::EBR));
+    newEBR('i', 'w', ebr.next, 0, "", -1, ebr.next);
+}
+
+//--------------------------NEW-----------------------------------
+
+void obfdisk::newPartition(int pos, char status, char type, char fit, int start, int size, string name){
+    this->mbr.particiones[pos].status = status;
+    this->mbr.particiones[pos].type = type;
+    this->mbr.particiones[pos].fit = fit;
+    this->mbr.particiones[pos].size = 0;
+    this->mbr.particiones[pos].start = start;
+    this->mbr.particiones[pos].size = size;
+    strcpy(this->mbr.particiones[pos].name, name.c_str());
+}
+
+void obfdisk::newEBR(char status, char fit, int start, int size, string name, int next, int pos){
+    Structs::EBR ebr;
+    ebr.status = status;
+    ebr.fit = fit;
+    ebr.start = start;
+    ebr.size = size;
+    strcpy(ebr.name, name.c_str());
+    ebr.next = next;
+    saveEBR(ebr, pos);
+}
+
+//--------------------------MAIN-----------------------------------
+
 void obfdisk::exec(){
     if(validarParametros()){
         cout<<"\nNo se pudo crear la particion"<<endl;
@@ -212,15 +259,37 @@ void obfdisk::exec(){
             cout<<"\nNo se pudo crear la particion"<<endl;
             return;
         }
-        init();
+        //init();
+        int inicio;
         for(int i = 0; i < 4; i++){
-            cout<<"---------------- PARTICION "<<i<<" ----------------"<<endl;
+            /*cout<<"---------------- PARTICION "<<i<<" ----------------"<<endl;
             cout<<"name : "<<this->mbr.particiones[i].name<<endl;
             cout<<"size : "<<this->mbr.particiones[i].size<<endl;
             cout<<"type : "<<this->mbr.particiones[i].type<<endl;
             cout<<"fit : "<<this->mbr.particiones[i].fit<<endl;
             cout<<"start : "<<this->mbr.particiones[i].start<<endl;
-            cout<<"status : "<<this->mbr.particiones[i].status<<endl;
+            cout<<"status : "<<this->mbr.particiones[i].status<<endl;*/
+            if(this->mbr.particiones[i].type == 'e'){
+                inicio = this->mbr.particiones[i].start;
+            }
+        }
+        bool seguimos = true;
+        int i = 0;
+        while(seguimos){
+            Structs::EBR ebr = getEBR(this->path, inicio);
+            cout<<"---------------- EBR "<<i<<" ----------------"<<endl;
+            cout<<"name : "<<ebr.name<<endl;
+            cout<<"size : "<<ebr.size<<endl;
+            cout<<"fit : "<<ebr.fit<<endl;
+            cout<<"start : "<<ebr.start<<endl;
+            cout<<"status : "<<ebr.status<<endl;
+            cout<<"next : "<<ebr.next<<endl;
+            if(ebr.next == -1){
+                seguimos = false;
+            }else{
+                inicio = ebr.next;
+            }
+            i +=1;
         }
     }
 }
@@ -239,22 +308,103 @@ void obfdisk::init(){
 }
 
 void obfdisk::deletePartition(){
-    int pos = 0;
+    Structs::EBR previous_ebr;
+    bool seguimos = true;
+    bool logic = false;
+    int pos = -1;
     for(int i = 0; i < 4; i++){
         if(this->name == this->mbr.particiones[i].name){
             pos = i;
         }
+        if(this->mbr.particiones[i].type == 'e'){
+            previous_ebr = getEBR(this->path, this->mbr.particiones[i].start);
+        }
+    }
+    while(seguimos){
+        if(previous_ebr.name == this->name){
+            logic = true;
+            break;
+        }
+        if(previous_ebr.next == -1){
+            seguimos = false;
+        }else{
+            previous_ebr = getEBR(this->path, previous_ebr.next);
+        }
+    }
+    if(logic){
+        deleteLogic();
+        return;
+    }
+    if(pos == -1){
+        cout<<"\nNo existe la particion : "<<this->name<<endl;
+        return;
     }
     cout<<"\nDesea eliminarlo [s/n]"<<endl;
     char op;
     cin >> op;
     if(op == 's'){
+        cout<<"\nLa particion : '"<<this->name<<"' ha sido eliminada"<<endl;
         newPartition(pos, 'i', 'x', this->mbr.fit, this->mbr.size, 0, "");
         saveMBR(this->mbr);
         return;
     }else{
+        cout<<"\nLa particion : '"<<this->name<<"' no fue eliminada"<<endl;
         return;
     }
+}
+
+void obfdisk::deleteLogic(){
+    Structs::EBR previous_ebr;
+    Structs::EBR current_ebr;
+    int ext_start;//START DE LA PARTICION EXTENDIDA
+    bool seguimos = true; //VARIABLE PARA MANTENER EL WHILE ACTIVO, ESTO PERMITE SEGUIR RECONOCIENDO EBRS
+    for(int i = 0; i < 4; i++){
+        if(this->mbr.particiones[i].type == 'e'){
+            //OBTENEMOS EL PRIMER EBR QUE SE ENCUENTRA CON EL MISMO START QUE LA PARTICION EXTENDIDA
+            previous_ebr = getEBR(this->path, this->mbr.particiones[i].start);
+            ext_start = this->mbr.particiones[i].start;
+        }
+    }
+    if(previous_ebr.name == this->name){
+        cout<<"\nDesea eliminarlo [s/n]"<<endl;
+        char op;
+        cin >> op;
+        if(op == 's'){
+            //SI LA PARTICION A ELIMINAR ES LA PRIMERA SE DEBE DEJAR EL EBR INHABILITADO PERO CON LA REFERENCIA DEL SIGUIENTE EBR SI EXISTIERA
+            newEBR('i', previous_ebr.fit, ext_start, 0, "", previous_ebr.next, ext_start);
+            return;
+        }else{
+            cout<<"\nLa particion : '"<<this->name<<"' no fue eliminada"<<endl;
+            return;
+        }
+    }
+    current_ebr = getEBR(this->path, previous_ebr.next);
+    while(seguimos){
+        cout<<"\ncur : "<<current_ebr.name<<" == name : "<<this->name<<endl;
+        if(current_ebr.name == this->name){
+            cout<<"\nDesea eliminarlo [s/n]"<<endl;
+            char op;
+            cin >> op;
+            if(op == 's'){
+                cout<<"\nLa particion : '"<<this->name<<"' ha sido eliminada"<<endl;
+                //VERIFICAR SI EL EBR ACTUAL APUNTA A OTRO EBR
+                previous_ebr.next = current_ebr.next;
+                saveEBR(previous_ebr, previous_ebr.start - sizeof(Structs::EBR));
+                return;
+            }else{
+                cout<<"\nLa particion : '"<<this->name<<"' no fue eliminada"<<endl;
+                return;
+            }
+        }
+        if(current_ebr.next == -1){
+            seguimos = false;
+        }else{
+            previous_ebr = current_ebr;
+            current_ebr = getEBR(this->path, current_ebr.next);
+        }
+    }
+    cout<<"\nNo existe la particion : "<<this->name<<endl;
+    return;
 }
 
 void obfdisk::bubbleSort(){
@@ -289,9 +439,10 @@ void obfdisk::createPartition(){
         cout<<"\nYa existe una particion con el nombre : "<<this->name<<endl;
         return;
     }
-    /*if(this->type == 'l'){
-
-    }*/
+    if(this->type == "l"){
+        createLogicPartition();
+        return;
+    }
     if(activas == 0){
         // CASO DONDE NO HAY NINGUNA PARTICION ACTIVA
         int sizeDisponible = this->mbr.size - sizeof(this->mbr);
@@ -301,8 +452,8 @@ void obfdisk::createPartition(){
         }
         newPartition(0, 'h', getType(this->type), getFit(this->fit), sizeof(Structs::MBR), this->size, this->name);
         saveMBR(this->mbr);
-        if(this->type == 'e'){
-            firstEBR('i', getFit(this->fit), sizeof(Structs::MBR), this->size, this->name, -1);
+        if(this->type == "e"){
+            newEBR('i', getFit(this->fit), sizeof(Structs::MBR), this->size, this->name, -1, sizeof(Structs::MBR));
         }
         return;
     }else{
@@ -317,11 +468,10 @@ void obfdisk::createPartition(){
                     tmp_space = this->mbr.size - ( this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size );
                     if(this->size <= tmp_space){
                         int start = (this->mbr.particiones[i-1].start + this->mbr.particiones[i-1].size);
-                        cout<<"\nstart : "<<start<<endl;
                         newPartition(i, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
                         saveMBR(this->mbr);
-                        if(this->type == 'e'){
-                            firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                        if(this->type == "e"){
+                            newEBR('i', getFit(this->fit), start, this->size, this->name, -1, start);
                         }
                         return;
                     }else{
@@ -339,8 +489,8 @@ void obfdisk::createPartition(){
                             newPartition(3, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
                             bubbleSort();
                             saveMBR(this->mbr);
-                            if(this->type == 'e'){
-                                firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                            if(this->type == "e"){
+                                newEBR('i', getFit(this->fit), start, this->size, this->name, -1, start);
                             }
                             return;
                         }
@@ -374,8 +524,8 @@ void obfdisk::createPartition(){
                     newPartition(3, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
                     bubbleSort();
                     saveMBR(this->mbr);
-                    if(this->type == 'e'){
-                        firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                    if(this->type == "e"){
+                        newEBR('i', getFit(this->fit), start, this->size, this->name, -1, start);
                     }
                     ant_space = 0;
                     return;
@@ -401,8 +551,8 @@ void obfdisk::createPartition(){
                             newPartition(3, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
                             bubbleSort();
                             saveMBR(this->mbr);
-                            if(this->type == 'e'){
-                                firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                            if(this->type == "e"){
+                                newEBR('i', getFit(this->fit), start, this->size, this->name, -1, start);
                             }
                             return;
                         }
@@ -414,8 +564,8 @@ void obfdisk::createPartition(){
                                 newPartition(3, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
                                 bubbleSort();
                                 saveMBR(this->mbr);
-                                if(this->type == 'e'){
-                                    firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                                if(this->type == "e"){
+                                    newEBR('i', getFit(this->fit), start, this->size, this->name, -1, start);
                                 }
                                 return;
                             }
@@ -487,8 +637,8 @@ void obfdisk::createPartition(){
                 newPartition(3, 'h', getType(this->type), getFit(this->fit), sizeof(Structs::MBR), this->size, this->name);
                 bubbleSort();
                 saveMBR(this->mbr);
-                if(this->type == 'e'){
-                    firstEBR('i', getFit(this->fit), sizeof(Structs::MBR), this->size, this->name, -1);
+                if(this->type == "e"){
+                    newEBR('i', getFit(this->fit), sizeof(Structs::MBR), this->size, this->name, -1, sizeof(Structs::MBR));
                 }
                 ant_space = 0;
                 return;
@@ -500,8 +650,8 @@ void obfdisk::createPartition(){
                         newPartition(3, 'h', getType(this->type), getFit(this->fit), start, this->size, this->name);
                         bubbleSort();
                         saveMBR(this->mbr);
-                        if(this->type == 'e'){
-                            firstEBR('i', getFit(this->fit), start, this->size, this->name, -1);
+                        if(this->type == "e"){
+                            newEBR('i', getFit(this->fit), start, this->size, this->name, -1, start);
                         }
                         ant_space = 0;
                         return;
@@ -513,13 +663,160 @@ void obfdisk::createPartition(){
     return;
 }
 
-void obfdisk::firstEBR(char status, char fit, int start, int size, string name, int next){
-    Structs::EBR ebr;
-    ebr.status = status;
-    ebr.fit = fit;
-    ebr.start = start;
-    ebr.size = size;
-    strcpy(ebr.name, name);
-    ebr.next = next;
-    saveEBR(ebr);
+void obfdisk::createLogicPartition(){
+    Structs::EBR previous_ebr;
+    Structs::EBR current_ebr;
+    int tmp_space = 0;
+    int ext_size = 0; //SIZE DE LA PARTICION EXTENDIDA
+    bool seguimos = true; //VARIABLE PARA MANTENER EL WHILE ACTIVO, ESTO PERMITE SEGUIR RECONOCIENDO EBRS
+    for(int i = 0; i < 4; i++){
+        if(this->mbr.particiones[i].type == 'e'){
+            //OBTENEMOS EL PRIMER EBR QUE SE ENCUENTRA CON EL MISMO START QUE LA PARTICION EXTENDIDA
+            previous_ebr = getEBR(this->path, this->mbr.particiones[i].start);
+            ext_size = this->mbr.particiones[i].size;
+        }
+    }
+    current_ebr = previous_ebr;
+    while(seguimos){
+        if(previous_ebr.name == this->name){
+            tmp_space += 1;
+        }
+        if(previous_ebr.next == -1){
+            seguimos = false;
+        }else{
+            previous_ebr = getEBR(this->path, previous_ebr.next);
+        }
+    }
+    if(tmp_space != 0){
+        cout<<"\nYa existe una particion con el nombre : "<<this->name<<endl;
+        return;
+    }
+    previous_ebr = current_ebr;
+    tmp_space = 0;
+    if(previous_ebr.status == 'i' && previous_ebr.next != -1){
+        //CASO DONDE EL PRIMER EBR ESTA INHABILITADO PERO SI HAY MAS EBRS
+        tmp_space = previous_ebr.next - (previous_ebr.start + sizeof(Structs::EBR));
+        //VERIFICAMOS SI EL ESPACIO LIBRE ES SUFICIENTE PARA LA PARTICION
+         if(this->size <= tmp_space){
+             if(this->fit == "ff"){
+                 previous_ebr.start = previous_ebr.start + sizeof(Structs::EBR);
+                 newEBR('h', getFit(this->fit), previous_ebr.start, this->size, this->name, previous_ebr.next, (previous_ebr.start - sizeof(Structs::EBR)));
+                 return;
+             }else{/*PARA BEST Y WORST FIT*/}
+         }
+    }
+    //SI EL PRIMER EBR TIENE NEXT -1 SIGNIFICA QUE NO NINGUNA PARTICION LOGICA CREADA, EN CASO CONTRARIO ANALIZAR PARA FITS
+    if(previous_ebr.next == -1){
+        tmp_space = ext_size - sizeof(Structs::EBR);
+        if(this->size <= tmp_space){
+            modifyEBR(previous_ebr);
+            return;
+        }else{
+            cout<<"\nEspacio insuficiente"<<endl;
+            cout<<"\nNo pudo crearse la particion"<<endl;
+            return;
+        }
+    }else{
+        //CASO DONDE LA PRIMER PARTICION ESTA JUNTO CON EL SIGUIENTE EBR, ES DECIR NO HAY ESPACIO LIBRE
+        current_ebr = getEBR(this->path, previous_ebr.next);
+        if(current_ebr.start == (previous_ebr.start + previous_ebr.size) || current_ebr.start == (previous_ebr.start + previous_ebr.size + sizeof(Structs::EBR))){
+            seguimos = true;
+            while(seguimos){
+                //SI EL EBR ACTUAL ESTA INHABILITADO Y SU NEXT ES -1 QUIERE DECIR QUE ES EL ULTIMO EBR
+                if(current_ebr.status == 'i' && current_ebr.next == -1){
+                    tmp_space = ext_size - ( current_ebr.start + sizeof(Structs::EBR) );
+                    if(this->size <= tmp_space){
+                        modifyEBR(current_ebr);
+                        return;
+                    }
+                }else{
+                    //CASO DONDE EL EBR ACTUAL ESTA ACTIVO, HAY QUE REVISAR SI HAY ESPACIO ENTRE LA PARTICION ANTERIOR
+                    tmp_space = previous_ebr.next - (previous_ebr.start + sizeof(Structs::EBR));
+                    //VERIFICAMOS SI EL ESPACIO LIBRE ES SUFICIENTE PARA LA PARTICION
+                     cout<<"\ntmp_space : "<<tmp_space<<endl;
+                     if(this->size <= tmp_space){
+                         if(this->fit == "ff"){
+                             int start = previous_ebr.start + previous_ebr.size;
+                             //current_ebr = getEBR(this->path, previous_ebr.next);
+                             int next;
+                             if(current_ebr.next == -1){
+                                 next = current_ebr.start;
+                             }else{
+                                 next = current_ebr.start - sizeof(Structs::EBR);
+                             }
+
+                             newEBR('h', 'f', (start + sizeof(Structs::EBR)), this->size, this->name, next, start);
+                             previous_ebr.next = start;
+                             saveEBR(previous_ebr, (previous_ebr.start - sizeof(Structs::EBR)));
+                             return;
+                         }else{/*PARA BEST Y WORST FIT*/}
+                     }
+                }
+
+                if(current_ebr.next == -1){
+                    seguimos = false;
+                }else{
+                    previous_ebr = current_ebr;
+                    current_ebr = getEBR(this->path, previous_ebr.next);
+                }
+            }
+        }else{
+            //CASO DONDE EXISTE ESPACIO ENTRE EL SEGUNDO EBR Y LA PRIMERA PARTICION
+            tmp_space = previous_ebr.next - (previous_ebr.start + sizeof(Structs::EBR));
+            //VERIFICAMOS SI EL ESPACIO LIBRE ES SUFICIENTE PARA LA PARTICION
+             if(this->size <= tmp_space){
+                 if(this->fit == "ff"){
+                     int start = previous_ebr.start + previous_ebr.size;
+                     current_ebr = getEBR(this->path, previous_ebr.next);
+                     int next;
+                     if(current_ebr.next == -1){
+                         next = current_ebr.start;
+                     }else{
+                         next = current_ebr.start - sizeof(Structs::EBR);
+                     }
+
+                     newEBR('h', 'f', (start + sizeof(Structs::EBR)), this->size, this->name, next, start);
+                     previous_ebr.next = start;
+                     saveEBR(previous_ebr, (previous_ebr.start - sizeof(Structs::EBR)));
+                     return;
+                 }else{/*PARA BEST Y WORST FIT*/}
+             }else{
+                 //SI LA PARTICION NO ENTRA EN EL ESPACIO ANTERIOR SE DEBE VERIFICAR SI HAY ESPACIO EN OTRO LADO
+                 previous_ebr = getEBR(this->path, previous_ebr.next);
+                 current_ebr = getEBR(this->path, previous_ebr.next);
+                 seguimos = true;
+                 while(seguimos){
+                     tmp_space = previous_ebr.next - (previous_ebr.start + sizeof(Structs::EBR));
+                     //VERIFICAMOS SI EL ESPACIO LIBRE ES SUFICIENTE PARA LA PARTICION
+                      if(this->size <= tmp_space){
+                          if(this->type == "ff"){
+                              int start = previous_ebr.start + previous_ebr.size;
+                              int next;
+                              if(current_ebr.next == -1){
+                                  next = current_ebr.start;
+                              }else{
+                                  next = current_ebr.start - sizeof(Structs::EBR);
+                              }
+
+                              newEBR('h', 'f', (start + sizeof(Structs::EBR)), this->size, this->name, next, start);
+                              previous_ebr.next = start;
+                              saveEBR(previous_ebr, (previous_ebr.start - sizeof(Structs::EBR)));
+                              return;
+                          }else{/*PARA BEST Y WORST FIT*/}
+                      }
+
+                     if(current_ebr.next == -1){
+                         seguimos = false;
+                     }else{
+                         previous_ebr = current_ebr;
+                         current_ebr = getEBR(this->path, previous_ebr.next);
+                     }
+                 }
+             }
+        }
+    }
+    cout<<"\nEspacio insuficiente"<<endl;
+    cout<<"\nNo pudo crearse la particion"<<endl;
+    return;
 }
+
