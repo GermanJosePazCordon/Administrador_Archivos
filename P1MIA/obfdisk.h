@@ -22,6 +22,8 @@ public:
     string delet = "";
     string name = "";
 
+    //--------------------------SETERS-----------------------------------
+
     void setSize(int size);
 
     void setAdd(int add);
@@ -38,19 +40,21 @@ public:
 
     void setName(string name);
 
-    char getFit(string fit);
-
-    char getType(string type);
-
-    void exec();
-
-    void init();
-
     bool validarParametros();
+
+    bool validarTipo();
+
+    //--------------------------GETERS-----------------------------------
 
     bool getMBR(string path);
 
     Structs::EBR getEBR(string path, int pos);
+
+    char getFit(string fit);
+
+    char getType(string type);
+
+    //--------------------------SAVE-------------------------------------
 
     void saveMBR(Structs::MBR);
 
@@ -58,22 +62,31 @@ public:
 
     void modifyEBR(Structs::EBR ebr);
 
+     //--------------------------NEW--------------------------------------
+
     void newPartition(int pos, char status, char type, char fit, int start, int size, string name);
 
-    void createPartition();
+    void newEBR(char status, char fit, int start, int size, string name, int next, int pos);
 
-    void createLogicPartition();
+    //--------------------------MAIN-----------------------------------
+
+    void bubbleSort();
+
+    void exec();
+
+    void init();
 
     void deletePartition();
 
     void deleteLogic();
 
-    void bubbleSort();
+    void addPartition();
 
-    bool validarTipo();
+    void addLogic();
 
-    void newEBR(char status, char fit, int start, int size, string name, int next, int pos);
+    void createPartition();
 
+    void createLogicPartition();
 };
 
 #endif // OBFDISK_H

@@ -104,17 +104,16 @@ void obmkdisk::init(){
         system(del.c_str());
     }
     int size;
-    if(this->unit == "k"){ //kb
+    if(this->unit == "k"){ //KB
         size =  this->size * 1024;
     }
-    else{ //mb
+    else{ //MB
         size =  this->size * 1024 * 1024;
     }
     file = fopen(charPath, "wb");
     fwrite("\0", 1, 1, file);
     fseek(file, size, SEEK_SET);
     fwrite("\0", 1, 1, file);
-
 
     Structs::MBR mbr;
     mbr.size = size;
