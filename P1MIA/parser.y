@@ -14,6 +14,12 @@ obrmdisk * rmdisk;
 #include "obfdisk.h"
 obfdisk * fdisk;
 
+#include "obmount.h"
+obmount * mount;
+
+#include "obumount.h"
+obumount * umount;
+
 using namespace std;
 extern int yylineno; //linea actual donde se encuentra el parser (analisis lexico) lo maneja BISON
 extern int columna; //columna actual donde se encuentra el parser (analisis lexico) lo maneja BISON
@@ -42,6 +48,8 @@ char TEXT[256];
 %token<TEXT> MKDISK;
 %token<TEXT> RMDISK;
 %token<TEXT> FDISK;
+%token<TEXT> MOUNT;
+%token<TEXT> UMOUNT;
 
 //PARAMETROS
 %token<TEXT> SIZE;
@@ -50,6 +58,7 @@ char TEXT[256];
 %token<TEXT> NAME;
 %token<TEXT> ADD;
 %token<TEXT> DELETE;
+%token<TEXT> ID;
 
 //LETRAS
 %token<TEXT> letF;
@@ -67,7 +76,7 @@ char TEXT[256];
 %token<TEXT> LETRA;
 %token<TEXT> CADENA;
 %token<TEXT> IDENTIFICADOR;
-%token<TEXT> CARACTER;
+%token<TEXT> IDMOUNT;
 
 
 %start INICIO
@@ -82,9 +91,11 @@ INSTRUCCIONES:
     | INSTRUCCION                   {  }
 
 INSTRUCCION:
-      MKDISK { mdisk = new obmkdisk(); /*objeto mkdisk*/} COMANDOMKDISK     { mdisk->exec(); /*ejecutar mkdisk*/}
-    | RMDISK { rmdisk = new obrmdisk(); /*objeto rmdisk*/} COMANDORMDISK    { rmdisk->exec(); /*ejecutar rmdisk*/}
-    | FDISK  { fdisk = new obfdisk(); /*objeto rmdisk*/} COMANDOFDISK       { fdisk->exec(); /*ejecutar fdisk*/}
+      MKDISK { mdisk = new obmkdisk();  /*objeto mkdisk*/} COMANDOMKDISK   { mdisk->exec();  /*ejecutar mkdisk*/}
+    | RMDISK { rmdisk = new obrmdisk(); /*objeto rmdisk*/} COMANDORMDISK   { rmdisk->exec(); /*ejecutar rmdisk*/}
+    | FDISK  { fdisk = new obfdisk();   /*objeto fdisk*/ } COMANDOFDISK    { fdisk->exec();  /*ejecutar fdisk*/ }
+    | MOUNT  { mount = new obmount();   /*objeto mount*/ } COMANDOMOUNT    { mount->exec();  /*ejecutar mount*/ }
+    | UMOUNT { umount = new obumount(); /*objeto umount*/} COMANDOUMOUNT   { umount->exec(); /*ejecutar umount*/}
 ;
 
 COMANDOMKDISK:
@@ -100,7 +111,7 @@ PARMKDISK: /*parametros para mkdisk*/
       | MENOS letF IGUAL IDENTIFICADOR  { mdisk->setFit($4); }
 ;
 
-COMANDORMDISK:
+COMANDORMDISK: /*parametros para rmdisk*/
         MENOS PATH IGUAL RUTA           { rmdisk->setPath($4); }
       | MENOS PATH IGUAL CADENA         { rmdisk->setPath($4); }
 ;
@@ -123,3 +134,22 @@ PARFDISK: /*parametros para fdisk*/
       | MENOS ADD  IGUAL MENOS POSITIVO    { fdisk->setAdd(atoi($5) * -1); }
       | MENOS DELETE IGUAL IDENTIFICADOR   { fdisk->setDelet($4); }
 ;
+
+COMANDOMOUNT:
+        COMANDOMOUNT PARMOUNT     {  }
+      | PARMOUNT                  {  }
+;
+
+PARMOUNT:  /*parametros para mount*/
+        MENOS PATH IGUAL RUTA              { mount->setPath($4); }
+      | MENOS PATH IGUAL CADENA            { mount->setPath($4); }
+      | MENOS NAME IGUAL CADENA            { mount->setName($4); }
+      | MENOS NAME IGUAL IDENTIFICADOR     { mount->setName($4); }
+;
+
+COMANDOUMOUNT: /*parametros para umount*/
+        MENOS ID IGUAL IDMOUNT   { umount->setID($4); }
+      | MENOS ID IGUAL CADENA    { umount->setID($4); }
+;
+
+

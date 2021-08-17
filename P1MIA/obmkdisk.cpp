@@ -54,7 +54,6 @@ void obmkdisk::mostrardatos(Structs::MBR mbr){
     cout<<"Signature: "<<mbr.signature <<endl;
     cout<<"Tamaño: "<<mbr.size <<endl;
     cout<<"Fit: " <<mbr.fit <<endl;
-    cout << "Size of mbr :" << sizeof(mbr) << endl;
 }
 
 bool obmkdisk::validarParametros(){

@@ -4,6 +4,7 @@
 #include <parser.h>  // Nuestro parser
 #include <scanner.h>  // Nuestro scanner
 #include <QTextStream>
+#include <structs.h>
 using namespace std;
 extern int yyparse(); //
 //static QList<discosmontados> discosenmemoria;
@@ -11,6 +12,7 @@ int p;
 extern int linea; // Linea del token
 extern int columna; // Columna de los tokens
 extern int yylineno;
+Structs::Discos discos[99];
 int main(int argc, char *argv[])
 {
 

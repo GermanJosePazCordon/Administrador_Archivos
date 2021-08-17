@@ -17,8 +17,7 @@ public:
 
         } partition;
 
-    typedef struct //MBR para los discos
-        {
+    typedef struct{ //MBR para los discos
             int size;
             time_t date;
             char fit;
@@ -35,6 +34,20 @@ public:
             int next = -1;
             char name[16];
         } EBR;
-};
 
+    typedef struct{
+            char letter; // a b c
+            char status = 'i';//i de inhabilitado a habilitado
+            char type = 'x';//tipo de mkfs ext2='2' ex3='3'
+            string name;
+            string id;
+        } particionMontada;
+
+    typedef struct{ //discos montados
+            int number;//arrelo +1
+            string path;
+            char status = 'i'; //i de inhabilitado a habilitado
+            particionMontada particiones[99];
+        } Discos;
+};
 #endif // STRUCTS_H
