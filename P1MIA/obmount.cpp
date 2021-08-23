@@ -158,6 +158,7 @@ void obmount::mount(int diskPos){
             id2 = discos[diskPos].particiones[i].letter;
             id1 += id2;
             discos[diskPos].particiones[i].id = id1;
+            discos[diskPos].particiones[i].mtime = time(0);
             break;
         }
     }

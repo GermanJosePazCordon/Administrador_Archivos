@@ -34,6 +34,7 @@ void obumount::exec(){
                     cout<<"\nSe ha desmontado la particion : "<<discos[i].particiones[j].name<<endl;
                     Structs::particionMontada tmp_montada;
                     discos[i].particiones[j] = tmp_montada;
+                    discos[i].particiones[j].umtime = time(0);
                 }
                 return;
             }

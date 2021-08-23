@@ -16,7 +16,8 @@ SOURCES += main.cpp \
     obrmdisk.cpp \
     obfdisk.cpp \
     obmount.cpp \
-    obumount.cpp
+    obumount.cpp \
+    obmkfs.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -42,7 +43,8 @@ HEADERS += \
     obrmdisk.h \
     obfdisk.h \
     obmount.h \
-    obumount.h
+    obumount.h \
+    obmkfs.h
 
 SUBDIRS += \
     P1MIA.pro

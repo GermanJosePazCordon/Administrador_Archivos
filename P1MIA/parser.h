@@ -54,23 +54,26 @@ extern int yydebug;
     FDISK = 260,
     MOUNT = 261,
     UMOUNT = 262,
-    SIZE = 263,
-    PATH = 264,
-    TYPE = 265,
-    NAME = 266,
-    ADD = 267,
-    DELETE = 268,
-    ID = 269,
-    letF = 270,
-    letU = 271,
-    IGUAL = 272,
-    MENOS = 273,
-    POSITIVO = 274,
-    RUTA = 275,
-    LETRA = 276,
-    CADENA = 277,
-    IDENTIFICADOR = 278,
-    IDMOUNT = 279
+    MKFS = 263,
+    SIZE = 264,
+    PATH = 265,
+    TYPE = 266,
+    NAME = 267,
+    ADD = 268,
+    DELETE = 269,
+    ID = 270,
+    FS = 271,
+    letF = 272,
+    letU = 273,
+    IGUAL = 274,
+    MENOS = 275,
+    POSITIVO = 276,
+    RUTA = 277,
+    LETRA = 278,
+    CADENA = 279,
+    IDENTIFICADOR = 280,
+    IDMOUNT = 281,
+    IDFS = 282
   };
 #endif
 
@@ -78,7 +81,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 38 "parser.y"
+#line 41 "parser.y"
 
 //se especifican los tipo de valores para los no terminales y lo terminales
 //char TEXT [256];
@@ -86,7 +89,7 @@ union YYSTYPE
 char TEXT[256];
 
 
-#line 90 "parser.h"
+#line 93 "parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -20,6 +20,9 @@ obmount * mount;
 #include "obumount.h"
 obumount * umount;
 
+#include "obmkfs.h"
+obmkfs * mkfs;
+
 using namespace std;
 extern int yylineno; //linea actual donde se encuentra el parser (analisis lexico) lo maneja BISON
 extern int columna; //columna actual donde se encuentra el parser (analisis lexico) lo maneja BISON
@@ -50,6 +53,7 @@ char TEXT[256];
 %token<TEXT> FDISK;
 %token<TEXT> MOUNT;
 %token<TEXT> UMOUNT;
+%token<TEXT> MKFS;
 
 //PARAMETROS
 %token<TEXT> SIZE;
@@ -59,6 +63,7 @@ char TEXT[256];
 %token<TEXT> ADD;
 %token<TEXT> DELETE;
 %token<TEXT> ID;
+%token<TEXT> FS;
 
 //LETRAS
 %token<TEXT> letF;
@@ -77,6 +82,7 @@ char TEXT[256];
 %token<TEXT> CADENA;
 %token<TEXT> IDENTIFICADOR;
 %token<TEXT> IDMOUNT;
+%token<TEXT> IDFS;
 
 
 %start INICIO
@@ -96,6 +102,7 @@ INSTRUCCION:
     | FDISK  { fdisk = new obfdisk();   /*objeto fdisk*/ } COMANDOFDISK    { fdisk->exec();  /*ejecutar fdisk*/ }
     | MOUNT  { mount = new obmount();   /*objeto mount*/ } COMANDOMOUNT    { mount->exec();  /*ejecutar mount*/ }
     | UMOUNT { umount = new obumount(); /*objeto umount*/} COMANDOUMOUNT   { umount->exec(); /*ejecutar umount*/}
+    | MKFS   { mkfs = new obmkfs();       /*objeto mkfs*/} COMANDOMKFS     { mkfs->exec();     /*ejecutar mkfs*/}
 ;
 
 COMANDOMKDISK:
@@ -152,4 +159,14 @@ COMANDOUMOUNT: /*parametros para umount*/
       | MENOS ID IGUAL CADENA    { umount->setID($4); }
 ;
 
+COMANDOMKFS:
+        COMANDOMKFS PARMKFS  {  }
+      | PARMKFS              {  }
+;
 
+PARMKFS:
+        MENOS ID IGUAL IDMOUNT          { mkfs->setID($4); }
+      | MENOS ID IGUAL CADENA           { mkfs->setID($4); }
+      | MENOS TYPE IGUAL IDENTIFICADOR  { mkfs->setType($4); }
+      | MENOS FS IGUAL IDFS             { mkfs->setFS($4); }
+;

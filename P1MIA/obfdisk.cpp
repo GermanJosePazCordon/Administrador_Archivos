@@ -1089,4 +1089,3 @@ void obfdisk::createLogicPartition(){
     cout<<"\nNo pudo crearse la particion"<<endl;
     return;
 }
-
