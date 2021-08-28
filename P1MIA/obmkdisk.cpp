@@ -81,6 +81,7 @@ bool obmkdisk::validarParametros(){
 }
 
 void obmkdisk::exec(){
+    cout<<"\nMDISK"<<endl;
     if(validarParametros()){
         cout<<"\nNo se pudo crear el disco."<<endl;
     }else{

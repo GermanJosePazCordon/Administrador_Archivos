@@ -23,6 +23,7 @@ void obumount::setID(string id){
 }
 
 void obumount::exec(){
+    cout<<"\nUMOUNT"<<endl;
     for (int i = 0; i < 99; i++){
         for (int j = 0; j < 26; j++){
             if (discos[i].particiones[j].id == this->id){

@@ -22,7 +22,7 @@ public:
 
     void exec();
 
-    void mount(int diskPos);
+    void mount(int diskPos, int start);
 
     void mostrarDatos();
 

@@ -39,6 +39,7 @@ public:
             char letter; // a b c
             char status = 'i';//i de inhabilitado a habilitado
             char type = 'x';//tipo de mkfs ext2='2' ex3='3'
+            int start; //posicion inicial de la particion en el archivo, utilizada para obtener el sb mas adelante
             string name;
             string id;
             time_t mtime;
@@ -86,7 +87,7 @@ public:
 
     typedef struct{ //Content
             char name[12];
-            int inodo;
+            int inodo = -1;
         } Content;
 
     typedef struct{ //Bloque de carpeta
@@ -100,5 +101,16 @@ public:
     typedef struct{ //Bloque de Apuntadores
             int pointers[16];
         } BAP;
+
+    typedef struct
+        {
+            char operacion[10] = "";
+            char tipo = 'x';
+            char path[40] = "";
+            char contenido[100] = ""; // Validar cuando espacio necesitan.
+            time_t date;
+            int size = 0;
+            int number = 2;
+        }Journaling; //typedef
 };
 #endif // STRUCTS_H

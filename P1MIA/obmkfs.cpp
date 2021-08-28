@@ -38,7 +38,40 @@ void obmkfs::setFS(string fs){
     this->fs = fs;
 }
 
+void obmkfs::saveJournaling(Structs::Journaling journaling, string path, int pos){
+    char charPath[path.size() + 1];
+    strcpy(charPath, path.c_str());
+    FILE *file = NULL;
+    file = fopen(charPath, "rb+");
+    fseek(file, pos, SEEK_SET);
+    fwrite(&journaling, sizeof(Structs::Journaling), 1, file);
+    fclose(file);
+}
+
+//ELIMINAR GET CUANDO ELIMINE EL XD
+Structs::Journaling obmkfs::getJournaling(string path, int pos){
+    Structs::Journaling tmp_journaling;
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fread(&tmp_journaling, sizeof(Structs::Journaling), 1, file);
+    fclose(file);
+    return tmp_journaling;
+}
+
+void obmkfs::addJournaling(string content, string nombre, string path, string operacion, char tipo, int pos){
+    Structs::Journaling jng;
+    strcpy(jng.contenido, content.c_str());
+    jng.date = time(0);
+    strcpy(jng.path, nombre.c_str());
+    jng.size = 0;
+    strcpy(jng.operacion, operacion.c_str());
+    jng.tipo = tipo;
+    saveJournaling(jng, path, pos);
+}
+
 void obmkfs::exec(){
+    cout<<"\nMKFs"<<endl;
     if(false){
         xd();
         return;
@@ -57,6 +90,7 @@ void obmkfs::exec(){
             if(discos[i].particiones[j].id == this->id){
                 discoMontado = discos[i];
                 particionMontada = discos[i].particiones[j];
+                break;
             }
         }
     }
@@ -142,20 +176,40 @@ void obmkfs::exec(){
     sb.bm_block_start = sb.bm_inode_start + numInodos;
     sb.inode_start = sb.bm_block_start + 3 * numInodos;
     sb.block_start = sb.inode_start + numInodos * sizeof(Structs::TI);
-    //SETEAR LOS BITMAPS
-    file = fopen(discoMontado.path.c_str(), "rb+");
-    for(int i = sb.bm_inode_start; i < sb.bm_block_start; i++){
-        fseek(file, i, SEEK_SET);
-        fwrite("0", 1, 1, file);
+    if(this->type == "full"){
+        file = fopen(discoMontado.path.c_str(), "rb+");
+        for(int i = sb.inode_start; i < (particion.size + particion.start); i++){
+            fseek(file, i, SEEK_SET);
+            fwrite("\0", 1, 1, file);
+        }
+        fclose(file);
     }
-    for(int i = sb.bm_block_start; i < sb.inode_start; i++){
-        fseek(file, i, SEEK_SET);
-        fwrite("0", 1, 1, file);
-    }
-    fclose(file);
     //CREANDO LA CARPETA ROOT
+    Structs::Journaling journaling;
     Structs::TI inodo;
     Structs::BC carpeta;
+    if(this->fs == "3fs"){
+        addJournaling("-", "/", discoMontado.path, "mkdir", '0', (particion.start + sizeof(Structs::SB)));
+    }
+    //CREANDO EL NUEVO INODO CARPETA
+    inodo.type = '0';
+    inodo.uid = 1;
+    inodo.gid = 1;
+    inodo.size = 0;
+    inodo.block[0] = 0;
+    inodo.atime = time(0);
+    inodo.ctime = time(0);
+    inodo.mtime = time(0);
+    inodo.perm = 664;
+    for(int i = 1; i < 15; i++){
+        inodo.block[i] = -1;
+    }
+    //GUARDANDO EL INODO
+    file = fopen(discoMontado.path.c_str(), "rb+");
+    fseek(file, sb.inode_start, SEEK_SET);
+    fwrite(&inodo, sizeof(Structs::TI), 1, file);
+    fclose(file);
+    //CREANDO CARPETA
     //PADRE
     carpeta.content[0].inodo = 0;
     strcpy(carpeta.content[0].name, ".");
@@ -163,14 +217,43 @@ void obmkfs::exec(){
     carpeta.content[1].inodo = 0;
     strcpy(carpeta.content[1].name, "..");
     //USERS
-    strcpy(carpeta.content[2].name, "user.txt");
     carpeta.content[2].inodo = 1;
-    //CREANDO EL NUEVO INODO
-    inodo.type = '0';
+    strcpy(carpeta.content[2].name, "user.txt");
+    //GUARDANDO LA CARPETA
+    file = fopen(discoMontado.path.c_str(), "rb+");
+    fseek(file, sb.block_start, SEEK_SET);
+    fwrite(&carpeta, sizeof(Structs::BC), 1, file);
+    fclose(file);
+    //CREANDO EL ARCHIVO INICIAL
+    if(this->fs == "3fs"){
+        addJournaling("1,G,root\n1,U,root,root,123\n", "uset.txt", discoMontado.path, "touch", '1', (particion.start + sizeof(Structs::SB) + sizeof(Structs::Journaling)));
+    }
+    //INODO ARCHIVO
+    inodo.type = '1';
     inodo.uid = 1;
     inodo.gid = 1;
-    inodo.size = 0;
-    inodo.block[0] = 0;
+    inodo.size = sizeof("1,G,root\n1,U,root,root,123\n");
+    inodo.block[0] = 1;
+    inodo.atime = time(0);
+    inodo.ctime = time(0);
+    inodo.mtime = time(0);
+    inodo.perm = 664;
+    for(int i = 1; i < 15; i++){
+        inodo.block[i] = -1;
+    }
+    //GUARDANDO EL INODO
+    file = fopen(discoMontado.path.c_str(), "rb+");
+    fseek(file, sb.inode_start + sizeof(Structs::TI), SEEK_SET);
+    fwrite(&inodo, sizeof(Structs::TI), 1, file);
+    fclose(file);
+    //CREANDO ARCHIVO USUARIOS
+    Structs::BAR archivo;
+    strcpy(archivo.content, "1,G,root\n1,U,root,root,123\n");
+    //GUARDANDO EL ARCHIVO
+    file = fopen(discoMontado.path.c_str(), "rb+");
+    fseek(file, sb.block_start + sizeof(Structs::BC), SEEK_SET);
+    fwrite(&archivo, sizeof(Structs::BAR), 1, file);
+    fclose(file);
     //ACTUALIZANDO EL SUPER BLOQUE
     sb.free_inodes_count = sb.inodes_count - 2;
     sb.free_blocks_count = sb.blocks_count - 2;
@@ -200,32 +283,22 @@ void obmkfs::exec(){
         fwrite("0", 1, 1, file);
     }
     fclose(file);
-    //GUARDANDO EL INODO
-    file = fopen(discoMontado.path.c_str(), "rb+");
-    fseek(file, sb.inode_start, SEEK_SET);
-    fwrite(&inodo, sizeof(Structs::TI), 1, file);
-    fclose(file);
-    //GUARDANDO LA CARPETA
-    file = fopen(discoMontado.path.c_str(), "rb+");
-    fseek(file, sb.block_start, SEEK_SET);
-    fwrite(&carpeta, sizeof(Structs::BC), 1, file);
-    fclose(file);
-
-    cout<<"\nbm inode start : "<<sb.bm_inode_start<<endl;
-    cout<<"\nbm block start : "<<sb.bm_block_start<<endl;
-    cout<<"\ninode start : "<<sb.inode_start<<endl;
-    cout<<"\nblock start : "<<sb.block_start<<endl;
+    //cout<<"\nAQUIIIIIIIIIIIIIIIII"<<endl;
 }
 
 void obmkfs::xd(){
     Structs::SB sb;
     Structs::TI inodo;
     Structs::BC carpeta;
+    Structs::BAR archivo;
+    Structs::Journaling jng;
     FILE * file = NULL;
     file = fopen("/home/monsterxd/Escritorio/Disco3.disk", "rb+");
     fseek(file, 136, SEEK_SET);
     fread(&sb, sizeof(Structs::SB), 1, file);
     fclose(file);
+    cout<<"\nparticion start : "<<136<<endl;
+    cout<<"\njournaling : "<<sb.bm_inode_start - 136 - sizeof(Structs::SB)<<endl;
     cout<<"\nbm inode start : "<<sb.bm_inode_start<<endl;
     cout<<"\nbm block start : "<<sb.bm_block_start<<endl;
     cout<<"\ninode start : "<<sb.inode_start<<endl;
@@ -239,7 +312,21 @@ void obmkfs::xd(){
     cout<<"\ninodo uid : "<<inodo.uid<<endl;
     cout<<"\ninodo gid : "<<inodo.gid<<endl;
     cout<<"\ninodo size : "<<inodo.size<<endl;
-    cout<<"\ninodo block[0] : "<<inodo.block[0]<<endl;
+    for(int i = 0; i < 15; i++){
+        cout<<"\ninodo block["<<i<<"] : "<<inodo.block[i]<<endl;
+    }
+    cout<<"\n-------------------------------------------------------------------"<<endl;
+    file = fopen("/home/monsterxd/Escritorio/Disco3.disk", "rb+");
+    fseek(file, sb.inode_start + sizeof(Structs::TI), SEEK_SET);
+    fread(&inodo, sizeof(Structs::TI), 1, file);
+    fclose(file);
+    cout<<"\ninodo type : "<<inodo.type<<endl;
+    cout<<"\ninodo uid : "<<inodo.uid<<endl;
+    cout<<"\ninodo gid : "<<inodo.gid<<endl;
+    cout<<"\ninodo size : "<<inodo.size<<endl;
+    for(int i = 0; i < 15; i++){
+        cout<<"\ninodo block["<<i<<"] : "<<inodo.block[i]<<endl;
+    }
     cout<<"\n-------------------------------------------------------------------"<<endl;
     file = fopen("/home/monsterxd/Escritorio/Disco3.disk", "rb+");
     fseek(file, sb.block_start, SEEK_SET);
@@ -251,5 +338,29 @@ void obmkfs::xd(){
     cout<<"\ncarpeta name  [1]: "<<carpeta.content[1].name<<endl;
     cout<<"\ncarpeta inodo [2]: "<<carpeta.content[2].inodo<<endl;
     cout<<"\ncarpeta name  [2]: "<<carpeta.content[2].name<<endl;
+    cout<<"\n-------------------------------------------------------------------"<<endl;
+    file = fopen("/home/monsterxd/Escritorio/Disco3.disk", "rb+");
+    fseek(file, sb.block_start + sizeof(Structs::BC), SEEK_SET);
+    fread(&archivo, sizeof(Structs::BAR), 1, file);
+    fclose(file);
+    cout<<"\narchivo content : "<<archivo.content<<endl;
+    cout<<"\n-------------------------------------------------------------------"<<endl;
+    jng = this->getJournaling("/home/monsterxd/Escritorio/Disco3.disk", (136 + sizeof(Structs::SB)));
+    cout<<"\njng operacion : "<<jng.operacion<<endl;
+    cout<<"\njng tipo : "<<jng.tipo<<endl;
+    cout<<"\njng path : "<<jng.path<<endl;
+    cout<<"\njng contenido : \n"<<jng.contenido<<endl;
+    char date[16];
+    strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&jng.date));
+    cout<<"\njng date : "<<date<<endl;
+    cout<<"\n-------------------------------------------------------------------"<<endl;
+    jng = this->getJournaling("/home/monsterxd/Escritorio/Disco3.disk", (136 + sizeof(Structs::SB) + sizeof(Structs::Journaling)));
+    cout<<"\njng operacion : "<<jng.operacion<<endl;
+    cout<<"\njng tipo : "<<jng.tipo<<endl;
+    cout<<"\njng path : "<<jng.path<<endl;
+    cout<<"\njng contenido : \n"<<jng.contenido<<endl;
+    date[16];
+    strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&jng.date));
+    cout<<"\njng date : "<<date<<endl;
 }
 

@@ -54,6 +54,7 @@ void obmount::mostrarDatos(){
 }
 
 void obmount::exec(){
+    cout<<"\nMOUNT"<<endl;
     bool isNormal = false;//BOOLEANO PARA DETERMINAR SI LA PARTICION ES PRIMARIA O EXTENDIDA
     bool isLogic = false;//BOOLEANO PARA DETERMINAR SI LA PARTICION ES LOGICA
     if(validarParametros()){
@@ -96,8 +97,10 @@ void obmount::exec(){
     fread(&mbr, sizeof(Structs::MBR), 1, file);
     fclose(file);
     Structs::EBR previous_ebr;
+    int start;
     for(int i = 0; i < 4; i++){
         if(this->name == mbr.particiones[i].name){
+            start = mbr.particiones[i].start;
             isNormal = true;
             break;
         }
@@ -112,12 +115,13 @@ void obmount::exec(){
     }
     if(isNormal){
         //MONTANDO PARTICIONES PRIMARIA Y EXTENDIDAS
-        mount(diskPos);
+        mount(diskPos, start);
         return;
     }
     bool seguimos = true;
     while(seguimos){
         if(previous_ebr.name == this->name){
+            start = previous_ebr.start;
             isLogic = true;
             break;
         }
@@ -134,14 +138,14 @@ void obmount::exec(){
     }
     if(isLogic){
         //MONTANDO PARTICIONES LOGICAS
-        mount(diskPos);
+        mount(diskPos, start);
         return;
     }
     cout<<"\nNo existe la particion "<<this->name<<" en el disco "<<this->path<<endl;
     return;
 }
 
-void obmount::mount(int diskPos){
+void obmount::mount(int diskPos, int start){
     discos[diskPos].status = 'h';
     discos[diskPos].path = this->path;
     discos[diskPos].number = diskPos + 1;
@@ -158,6 +162,7 @@ void obmount::mount(int diskPos){
             id2 = discos[diskPos].particiones[i].letter;
             id1 += id2;
             discos[diskPos].particiones[i].id = id1;
+            discos[diskPos].particiones[i].start = start;
             discos[diskPos].particiones[i].mtime = time(0);
             break;
         }

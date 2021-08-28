@@ -23,6 +23,12 @@ obumount * umount;
 #include "obmkfs.h"
 obmkfs * mkfs;
 
+#include "obtouch.h"
+obtouch * touch;
+
+#include "obmkdir.h"
+obmkdir * mkdir;
+
 using namespace std;
 extern int yylineno; //linea actual donde se encuentra el parser (analisis lexico) lo maneja BISON
 extern int columna; //columna actual donde se encuentra el parser (analisis lexico) lo maneja BISON
@@ -54,6 +60,8 @@ char TEXT[256];
 %token<TEXT> MOUNT;
 %token<TEXT> UMOUNT;
 %token<TEXT> MKFS;
+%token<TEXT> TOUCH;
+%token<TEXT> MKDIR;
 
 //PARAMETROS
 %token<TEXT> SIZE;
@@ -64,10 +72,14 @@ char TEXT[256];
 %token<TEXT> DELETE;
 %token<TEXT> ID;
 %token<TEXT> FS;
+%token<TEXT> CONT;
+%token<TEXT> STDIN;
 
 //LETRAS
 %token<TEXT> letF;
 %token<TEXT> letU;
+%token<TEXT> letR;
+%token<TEXT> letP;
 
 //SIMBOLOS
 %token<TEXT> IGUAL;
@@ -103,6 +115,8 @@ INSTRUCCION:
     | MOUNT  { mount = new obmount();   /*objeto mount*/ } COMANDOMOUNT    { mount->exec();  /*ejecutar mount*/ }
     | UMOUNT { umount = new obumount(); /*objeto umount*/} COMANDOUMOUNT   { umount->exec(); /*ejecutar umount*/}
     | MKFS   { mkfs = new obmkfs();       /*objeto mkfs*/} COMANDOMKFS     { mkfs->exec();     /*ejecutar mkfs*/}
+    | TOUCH  { touch = new obtouch();    /*objeto touch*/} COMANDOTOUCH    { touch->exec();   /*ejecutar touch*/}
+    | MKDIR  { mkdir = new obmkdir();    /*objeto mkdir*/} COMANDOMKDIR    { mkdir->exec();   /*ejecutar mkdir*/}
 ;
 
 COMANDOMKDISK:
@@ -169,4 +183,30 @@ PARMKFS:
       | MENOS ID IGUAL CADENA           { mkfs->setID($4); }
       | MENOS TYPE IGUAL IDENTIFICADOR  { mkfs->setType($4); }
       | MENOS FS IGUAL IDFS             { mkfs->setFS($4); }
+;
+
+COMANDOTOUCH:
+        COMANDOTOUCH PARTOUCH   {  }
+      | PARTOUCH                {  }
+;
+
+PARTOUCH: /*parametros para touch*/
+        MENOS PATH IGUAL RUTA              { touch->setPath($4); }
+      | MENOS PATH IGUAL CADENA            { touch->setPath($4); }
+      | MENOS CONT IGUAL RUTA              { touch->setCont($4); }
+      | MENOS CONT IGUAL CADENA            { touch->setCont($4); }
+      | MENOS SIZE IGUAL POSITIVO          { touch->setSize(atoi($4)); }
+      | MENOS letR                         { touch->setR(); }
+      | MENOS STDIN                        { touch->setStdin(); }
+;
+
+COMANDOMKDIR:
+        COMANDOMKDIR PARMKDIR   {  }
+      | PARMKDIR                {  }
+;
+
+PARMKDIR: /*parametros para mkdir*/
+        MENOS PATH IGUAL RUTA              { mkdir->setPath($4); }
+      | MENOS PATH IGUAL CADENA            { mkdir->setPath($4); }
+      | MENOS LETRA                        { mkdir->setP($2); }
 ;

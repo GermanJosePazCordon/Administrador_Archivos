@@ -269,6 +269,7 @@ void obfdisk::bubbleSort(){
 }
 
 void obfdisk::exec(){
+    cout<<"\nFDISK"<<endl;
     if(validarParametros()){
         cout<<"\nNo se pudo crear la particion"<<endl;
     }else{
@@ -374,14 +375,13 @@ void obfdisk::deletePartition(){
             saveMBR(this->mbr);
             return;
         }else{
-            char carac = '\0';
             char charPath[this->path.size() + 1];
             strcpy(charPath, this->path.c_str());
             FILE *file = NULL;
             file = fopen(charPath, "rb+");
             for(int i = this->mbr.particiones[pos].start; i < (this->mbr.particiones[pos].start + this->mbr.particiones[pos].size); i++){
                 fseek(file, i, SEEK_SET);
-                fwrite(&carac, 1, 1, file);
+                fwrite("\0", 1, 1, file);
             }
             fclose(file);
             cout<<"\nLa particion : '"<<this->name<<"' ha sido eliminada"<<endl;
@@ -449,14 +449,13 @@ void obfdisk::deleteLogic(){
                     saveEBR(previous_ebr, previous_ebr.start - sizeof(Structs::EBR));
                     return;
                 }else{
-                    char carac = '\0';
                     char charPath[this->path.size() + 1];
                     strcpy(charPath, this->path.c_str());
                     FILE *file = NULL;
                     file = fopen(charPath, "rb+");
                     for(int i = (current_ebr.start - sizeof(Structs::EBR)); i < (current_ebr.start + current_ebr.size); i++){
                         fseek(file, i, SEEK_SET);
-                        fwrite(&carac, 1, 1, file);
+                        fwrite("\0", 1, 1, file);
                     }
                     fclose(file);
                     previous_ebr.next = current_ebr.next;
