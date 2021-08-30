@@ -45,14 +45,6 @@ void obtouch::setStdin(){
     this->stdi = true;
 }
 
-void obtouch::saveSB(Structs::SB sb, string path, int pos){
-    FILE * file = NULL;
-    file = fopen(path.c_str(), "rb+");
-    fseek(file, pos, SEEK_SET);
-    fwrite(&sb, sizeof(Structs::SB), 1, file);
-    fclose(file);
-}
-
 Structs::SB obtouch::getSB(string path, int pos){
     Structs::SB sb;
     FILE * file = NULL;
@@ -61,35 +53,6 @@ Structs::SB obtouch::getSB(string path, int pos){
     fread(&sb, sizeof(Structs::SB), 1, file);
     fclose(file);
     return sb;
-}
-
-void obtouch::saveJournaling(Structs::Journaling journaling, string path, int pos){
-    char charPath[path.size() + 1];
-    strcpy(charPath, path.c_str());
-    FILE *file = NULL;
-    file = fopen(charPath, "rb+");
-    fseek(file, pos, SEEK_SET);
-    fwrite(&journaling, sizeof(Structs::Journaling), 1, file);
-    fclose(file);
-}
-
-void obtouch::addJournaling(string content, string nombre, string path, string operacion, char tipo, int part_start){
-    Structs::Journaling jng;
-    strcpy(jng.contenido, content.c_str());
-    jng.date = time(0);
-    strcpy(jng.path, nombre.c_str());
-    jng.size = 0;
-    strcpy(jng.operacion, operacion.c_str());
-    jng.tipo = tipo;
-    Structs::Journaling jng_tmp;
-    FILE * file = NULL;
-    file = fopen(path.c_str(), "rb+");
-    fseek(file, (part_start + sizeof(Structs::SB)), SEEK_SET);
-    fread(&jng_tmp, sizeof(Structs::Journaling), 1, file);
-    fclose(file);
-    saveJournaling(jng, path, (part_start + sizeof(Structs::SB) + jng_tmp.number *sizeof(Structs::Journaling)));
-    jng_tmp.number = jng_tmp.number + sizeof(Structs::Journaling);
-    saveJournaling(jng_tmp, path, (part_start + sizeof(Structs::SB)));
 }
 
 Structs::TI obtouch::getInodo(string path, int pos){
@@ -110,6 +73,48 @@ Structs::BC obtouch::getBC(string path, int pos){
     fread(&bc, sizeof(Structs::BC), 1, file);
     fclose(file);
     return bc;
+}
+
+Structs::BAR obtouch::getBAR(string path, int pos){
+    Structs::BAR bar;
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fread(&bar, sizeof(Structs::BC), 1, file);
+    fclose(file);
+    return bar;
+}
+
+void obtouch::saveSB(Structs::SB sb, string path, int pos){
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fwrite(&sb, sizeof(Structs::SB), 1, file);
+    fclose(file);
+}
+
+void obtouch::saveInodo(Structs::TI inodo, string path, int pos){
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fwrite(&inodo, sizeof(Structs::TI), 1, file);
+    fclose(file);
+}
+
+void obtouch::saveBC(Structs::BC bc, string path, int pos){
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fwrite(&bc, sizeof(Structs::BC), 1, file);
+    fclose(file);
+}
+
+void obtouch::saveBAR(Structs::BAR bar, string path, int pos){
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fwrite(&bar, sizeof(Structs::BAR), 1, file);
+    fclose(file);
 }
 
 list<string> obtouch::separar_carpetas(string path) {
@@ -172,7 +177,7 @@ void obtouch::exec(){
         //OBTENEMOS EL SUPER BLOQUE
         sb = this->getSB(path_particion, start_particion);
         //cout<<"\nCARPETA DE LA LISTA : "<<*it<<endl;
-        cout<<"\ninodo : "<<inodoPadre<<endl;
+        //cout<<"\ninodo : "<<inodoPadre<<endl;
         inodo_actual = this->getInodo(path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
         //PRIMER PASADA, SE VERIFICA SI LA CARPETA ACTUAL ESTA CREADA O NO, NO SE REALIZA NINGUNA ACCION MAS QUE VALIDACIONES
         bool carpeta_existente = false;
@@ -183,7 +188,7 @@ void obtouch::exec(){
                 bc_actual = this->getBC(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                 for(int j = 0; j < 4; j++){
                     string name = *it;
-                    cout<<bc_actual.content[j].name<<" apunta a "<<bc_actual.content[j].inodo<<endl;
+                    //cout<<bc_actual.content[j].name<<" apunta a "<<bc_actual.content[j].inodo<<endl;
                     if(strcmp(bc_actual.content[j].name, name.c_str()) == 0){
                         //cout<<"\ncarpeta encontrada : "<<*it<<endl;
                         //CARPETA ENCONTRADA EN LA POSICION i DEL PRIMER BLOQUE DEL NODOD
@@ -192,7 +197,7 @@ void obtouch::exec(){
                         inodoPadre = bc_actual.content[j].inodo;
                     }
                 }
-                cout<<"\n---------------------------------"<<endl;
+                //cout<<"\n---------------------------------"<<endl;
             }
         }
         //SEGUNDA PASADA, SE EJECUTAN ACCIONES DEPENDIENDO DE LAS VALIDACIONES HECHAS EN LA PRIMER PASADA
@@ -223,11 +228,7 @@ void obtouch::exec(){
                                 string name = *it;
                                 strcpy(bc_actual.content[j].name, name.c_str());
                                 //GUARDANDO LA CARPETA
-                                FILE * file = NULL;
-                                file = fopen(path_particion.c_str(), "rb+");
-                                fseek(file, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)), SEEK_SET);
-                                fwrite(&bc_actual, sizeof(Structs::BC), 1, file);
-                                fclose(file);
+                                this->saveBC(bc_actual, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                                 inodoAbuelo = inodoPadre;
                                 inodoPadre = sb.firts_ino;
                                 this->crearCarpeta(sb, inodoPadre, inodoAbuelo, path_particion, start_particion);
@@ -242,17 +243,25 @@ void obtouch::exec(){
                             //CREAMOS LA CARPETA EN EL BLOQUE INACTIVO
                             inodo_actual.block[i] = sb.first_blo;
                             //GUARDANDO EL INODO
-                            FILE * file = NULL;
-                            file = fopen(path_particion.c_str(), "rb+");
-                            fseek(file, (sb.inode_start + inodoPadre * sizeof(Structs::TI)), SEEK_SET);
-                            fwrite(&inodo_actual, sizeof(Structs::TI), 1, file);
-                            fclose(file);
+                            this->saveInodo(inodo_actual, path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
+                            //CREANDO LA CARPETA
+                            Structs::BC bc;
+                            for(int i = 0; i < 4; i++){
+                                bc.content[i].inodo = -1;
+                            }
+                            bc.content[0].inodo = sb.firts_ino;
+                            string name = *it;
+                            strcpy(bc.content[0].name, name.c_str());
+
+                            //GUARDANDO LA CARPETA
+                            this->saveBC(bc, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
+                            //ACTUALIZANDO EL SUPER BLOQUE
+                            sb.free_blocks_count = sb.blocks_count - 1;
+                            sb.first_blo = sb.first_blo + 1;
                             inodoAbuelo = inodoPadre;
                             inodoPadre = sb.firts_ino;
                             this->crearCarpeta(sb, inodoPadre, inodoAbuelo, path_particion, start_particion);
                             carpeta_creada = true;
-                            //cout<<"\ncarpeta : "<<*it<<" apunta "<<inodo_actual.block[i]<<endl;
-                            //break;
                         }else{
                             //ES INDIRECTO
                         }
@@ -266,13 +275,12 @@ void obtouch::exec(){
             }
         }
     }
-
     //UNA VEZ CREADAS TODAS LAS CARPETAS NECESARIAS DEL PATH PROCEDEMOS A CREAR EL ARCHIVO
     //PRIMERO OBTENEMOS EL NOMBRE DEL ARCHIVO
     char charPath[this->path.length() + 1];
-    strcpy(charPath, path.c_str());
+    strcpy(charPath, this->path.c_str());
     string file_name; //VAIABLE CON EL NOMBRE DEL ARCHIVO
-    for(int i = path.length(); i > 0; i--){
+    for(int i = this->path.length(); i > 0; i--){
         if(charPath[i]== '/'){
             break;
         }
@@ -300,48 +308,63 @@ void obtouch::exec(){
             }
         }
     }
+    bool bloque_creado = false;
     if(!todas_creadas){
         //YA QUE EXISTIA ALMENOS UNA CARPETA SIN CREAR ES POR SEGURO QUE EL ARCHIVO NO ESTA CREADO
         //AHORA DEBEMOS BUSCAR UN ESPACIO LIBRE PARA CREAR EL INODO CARPETA
         inodo_actual = this->getInodo(path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
         sb = this->getSB(path_particion, start_particion);
         for(int i = 0; i < 15; i++){
+            if(bloque_creado){
+                return;
+            }
             //VERIFICAMOS EN LOS BLOQUES DEL INODO
             if(inodo_actual.block[i] != -1){
                 bc_actual = this->getBC(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                 for(int j = 0; j < 4; j++){
                     //VERIFICAMOS SI EL NODO ACTUAL ESTA INACTIVO, DE ESTARLO CREAMOS LA CARPETA
+                    cout<<"inodo : "<<inodoPadre<<endl;
+                    cout<<"bloque : "<<inodo_actual.block[i]<<endl;
+                    cout<<"j : "<<j<<", content inodo : "<<bc_actual.content[j].inodo<<endl;
                     if(bc_actual.content[j].inodo == -1){
+                        cout<<"entre"<<endl;
                         bc_actual.content[j].inodo = sb.firts_ino;
                         strcpy(bc_actual.content[j].name, file_name.c_str());
-
                         //GUARDANDO LA CARPETA
-                        FILE * file = NULL;
-                        file = fopen(path_particion.c_str(), "rb+");
-                        fseek(file, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)), SEEK_SET);
-                        fwrite(&bc_actual, sizeof(Structs::BC), 1, file);
-                        fclose(file);
+                        this->saveBC(bc_actual, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                         this->crearInodoArchivo(sb, content, path_particion, start_particion, sb.firts_ino);
+                        bloque_creado = true;
                         break;
                     }
                 }
             }else{
                 //VALIDAMOS SI EL BLOQUE INACTIVO ES DIRECTO
                 if(i < 12){
+                    cout<<"ensss"<<endl;
                     //CREAMOS LA CARPETA EN EL BLOQUE INACTIVO
                     inodo_actual.block[i] = sb.first_blo;
                     //GUARDANDO EL INODO
-                    FILE * file = NULL;
-                    file = fopen(path_particion.c_str(), "rb+");
-                    fseek(file, (sb.inode_start + inodoPadre * sizeof(Structs::TI)), SEEK_SET);
-                    fwrite(&inodo_actual, sizeof(Structs::TI), 1, file);
-                    fclose(file);
+                    this->saveInodo(inodo_actual, path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
+                    /*//CREANDO LA CARPETA
+                    Structs::BC bc;
+                    bc.content[0].inodo = sb.firts_ino;
+                    strcpy(bc.content[0].name, file_name.c_str());
+                    for(int i = 1; i < 4; i++){
+                        bc.content[i].inodo = -1;
+                    }
+                    //GUARDANDO LA CARPETA
+                    this->saveBC(bc, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
+                    //ACTUALIZANDO EL SUPER BLOQUE
+                    sb.free_blocks_count = sb.blocks_count - 1;
+                    sb.first_blo = sb.first_blo + 1;*/
                     inodoAbuelo = inodoPadre;
                     inodoPadre = sb.firts_ino;
                     this->crearInodoArchivo(sb, content, path_particion, start_particion, sb.firts_ino);
+
                 }else{
                     //INDIRECTOS
                 }
+                bloque_creado = true;
                 break;
             }
         }
@@ -350,11 +373,14 @@ void obtouch::exec(){
         sb = this->getSB(path_particion, start_particion);
         //YA QUE TODAS LAS CARPETAS ESTABAN CREADAS DESDE UN INICIO SE TIENE QUE VALIDAR QUE EL ARCHIVO NO ESTE CREADO
         for(int i = 0; i < 15; i++){
+            if(bloque_creado){
+                return;
+            }
             //VERIFICAMOS EN LOS BLOQUES DEL INODO
             if(inodo_actual.block[i] != -1){
                 bc_actual = this->getBC(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                 for(int j = 0; j < 4; j++){
-                    cout<<bc_actual.content[j].name <<" == "<<file_name<<endl;
+                    //cout<<bc_actual.content[j].name <<" == "<<file_name<<endl;
                     if(strcmp(bc_actual.content[j].name, file_name.c_str()) == 0){
                         cout<<"\nYa existe el archivo : "<<file_name<<endl;
                         return;
@@ -364,12 +390,9 @@ void obtouch::exec(){
                         bc_actual.content[j].inodo = sb.firts_ino;
                         strcpy(bc_actual.content[j].name, file_name.c_str());
                         //GUARDANDO LA CARPETA
-                        FILE * file = NULL;
-                        file = fopen(path_particion.c_str(), "rb+");
-                        fseek(file, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)), SEEK_SET);
-                        fwrite(&bc_actual, sizeof(Structs::BC), 1, file);
-                        fclose(file);
+                        this->saveBC(bc_actual, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                         this->crearInodoArchivo(sb, content, path_particion, start_particion, sb.firts_ino);
+                        bloque_creado = true;
                         break;
                     }
                 }
@@ -379,17 +402,27 @@ void obtouch::exec(){
                     //CREAMOS LA CARPETA EN EL BLOQUE INACTIVO
                     inodo_actual.block[i] = sb.first_blo;
                     //GUARDANDO EL INODO
-                    FILE * file = NULL;
-                    file = fopen(path_particion.c_str(), "rb+");
-                    fseek(file, (sb.inode_start + inodoPadre * sizeof(Structs::TI)), SEEK_SET);
-                    fwrite(&inodo_actual, sizeof(Structs::TI), 1, file);
-                    fclose(file);
+                    this->saveInodo(inodo_actual, path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
+                    /*//CREANDO LA CARPETA
+                    Structs::BC bc;
+                    bc.content[0].inodo = sb.firts_ino;
+                    strcpy(bc.content[0].name, file_name.c_str());
+                    for(int i = 1; i < 4; i++){
+                        bc.content[i].inodo = -1;
+                    }
+                    //GUARDANDO LA CARPETA
+                    this->saveBC(bc, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
+                    //ACTUALIZANDO EL SUPER BLOQUE
+                    sb.free_blocks_count = sb.blocks_count - 1;
+                    sb.first_blo = sb.first_blo + 1;*/
                     inodoAbuelo = inodoPadre;
                     inodoPadre = sb.firts_ino;
                     this->crearInodoArchivo(sb, content, path_particion, start_particion, sb.firts_ino);
+
                 }else{
                     //INDIRECTOS
                 }
+                bloque_creado = true;
                 break;
             }
         }
@@ -399,6 +432,7 @@ void obtouch::exec(){
     Structs::BAR archivos;
     FILE * file = NULL;
     file = fopen(path_particion.c_str(), "rb+");
+    cout<<"\ninodo : "<<inodoPadre<<endl;
     for(int i = 0; i < 15; i++){
         if(inodo_actual.block[i] != -1){
             fseek(file, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BAR)), SEEK_SET);
@@ -427,11 +461,8 @@ void obtouch::crearCarpeta(Structs::SB sb, int inodoPadre, int inodoAbuelo, stri
         inodo.block[i] = -1;
     }
     //GUARDANDO EL INODO
+    this->saveInodo(inodo, path, (sb.inode_start + sb.firts_ino * sizeof(Structs::TI)));
     FILE * file = NULL;
-    file = fopen(path.c_str(), "rb+");
-    fseek(file, (sb.inode_start + sb.firts_ino * sizeof(Structs::TI)), SEEK_SET);
-    fwrite(&inodo, sizeof(Structs::TI), 1, file);
-    fclose(file);
     //CREANDO CARPETA
     Structs::BC carpeta;
     //PADRE
@@ -441,10 +472,7 @@ void obtouch::crearCarpeta(Structs::SB sb, int inodoPadre, int inodoAbuelo, stri
     carpeta.content[1].inodo = inodoAbuelo;
     strcpy(carpeta.content[1].name, "..");
     //GUARDANDO LA CARPETA
-    file = fopen(path.c_str(), "rb+");
-    fseek(file, (sb.block_start + sb.first_blo * sizeof(Structs::BC)), SEEK_SET);
-    fwrite(&carpeta, sizeof(Structs::BC), 1, file);
-    fclose(file);
+    this->saveBC(carpeta, path, (sb.block_start + sb.first_blo * sizeof(Structs::BC)));
     //SETEANDO LOS BITMAPS
     file = fopen(path.c_str(), "rb+");
     fseek(file, sb.firts_ino, SEEK_SET);
@@ -458,14 +486,11 @@ void obtouch::crearCarpeta(Structs::SB sb, int inodoPadre, int inodoAbuelo, stri
     sb.firts_ino = sb.firts_ino + 1;
     sb.first_blo = sb.first_blo + 1;
     //GUARDANDO EL SUPER BLOQUE
-    file = fopen(path.c_str(), "rb+");
-    fseek(file, start_particion, SEEK_SET);
-    fwrite(&sb, sizeof(Structs::SB), 1, file);
-    fclose(file);
+    this->saveSB(sb, path, start_particion);
 }
 
 void obtouch::crearInodoArchivo(Structs::SB sb, string content, string path, int start_particion, int inodoPadre){
-    Structs::TI inodo = this->getInodo(path, (sb.block_start + inodoPadre * sizeof(Structs::TI)));
+    Structs::TI inodo; /*this->getInodo(path, (sb.inode_start + inodoPadre * sizeof(Structs::TI)))*/;
     //CREANDO INODO ARCHIVO
     inodo.type = '1';
     inodo.uid = 1;
@@ -480,19 +505,13 @@ void obtouch::crearInodoArchivo(Structs::SB sb, string content, string path, int
         inodo.block[i] = -1;
     }
     //GUARDANDO EL INODO
-    FILE * file = NULL;
-    file = fopen(path.c_str(), "rb+");
-    fseek(file, (sb.inode_start + sb.first_blo * sizeof(Structs::TI)), SEEK_SET);
-    fwrite(&inodo, sizeof(Structs::TI), 1, file);
-    fclose(file);
+    this->saveInodo(inodo, path, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
+    //FILE * file = NULL;
     //ACTUALIZANDO EL SUPER BLOQUE
     sb.free_inodes_count = sb.inodes_count - 1;
     sb.firts_ino = sb.firts_ino + 1;
     //GUARDANDO EL SUPER BLOQUE
-    file = fopen(path.c_str(), "rb+");
-    fseek(file, start_particion, SEEK_SET);
-    fwrite(&sb, sizeof(Structs::SB), 1, file);
-    fclose(file);
+    this->saveSB(sb, path, start_particion);
     //COSAS PARA CREAR EL BLOQUE ARCHIVO
     int limite = content.length();
     int numeroBloques = limite / 64;
@@ -520,24 +539,14 @@ void obtouch::crearArchivo(int inodoPadre, int bloque, string content, string pa
     Structs::TI inodo = this->getInodo(path, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
     inodo.block[bloque] = sb.first_blo;
     //GUARDANDO EL INODO
-    FILE * file = NULL;
-    file = fopen(path.c_str(), "rb+");
-    fseek(file, (sb.inode_start + inodoPadre * sizeof(Structs::TI)), SEEK_SET);
-    fwrite(&inodo, sizeof(Structs::TI), 1, file);
-    fclose(file);
+    this->saveInodo(inodo, path, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
     Structs::BAR archivo;
     strcpy(archivo.content, content.c_str());
     //GUARDANDO EL ARCHIVO
-    file = fopen(path.c_str(), "rb+");
-    fseek(file, (sb.block_start + sb.first_blo * sizeof(Structs::BAR)), SEEK_SET);
-    fwrite(&archivo, sizeof(Structs::BAR), 1, file);
-    fclose(file);
+    this->saveBAR(archivo, path, (sb.block_start + sb.first_blo * sizeof(Structs::BAR)));
     //ACTUALIZANDO EL SUPER BLOQUE
     sb.free_blocks_count = sb.blocks_count - 1;
     sb.first_blo = sb.first_blo + 1;
     //GUARDANDO EL SUPER BLOQUE
-    file = fopen(path.c_str(), "rb+");
-    fseek(file, start, SEEK_SET);
-    fwrite(&sb, sizeof(Structs::SB), 1, file);
-    fclose(file);
+    this->saveSB(sb, path, start);
 }

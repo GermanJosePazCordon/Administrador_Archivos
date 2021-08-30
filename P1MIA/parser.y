@@ -29,6 +29,9 @@ obtouch * touch;
 #include "obmkdir.h"
 obmkdir * mkdir;
 
+#include "obreporte.h"
+obreporte * reporte;
+
 using namespace std;
 extern int yylineno; //linea actual donde se encuentra el parser (analisis lexico) lo maneja BISON
 extern int columna; //columna actual donde se encuentra el parser (analisis lexico) lo maneja BISON
@@ -62,6 +65,7 @@ char TEXT[256];
 %token<TEXT> MKFS;
 %token<TEXT> TOUCH;
 %token<TEXT> MKDIR;
+%token<TEXT> REP;
 
 //PARAMETROS
 %token<TEXT> SIZE;
@@ -74,6 +78,8 @@ char TEXT[256];
 %token<TEXT> FS;
 %token<TEXT> CONT;
 %token<TEXT> STDIN;
+%token<TEXT> RUTAS;
+%token<TEXT> ROOT;
 
 //LETRAS
 %token<TEXT> letF;
@@ -109,14 +115,15 @@ INSTRUCCIONES:
     | INSTRUCCION                   {  }
 
 INSTRUCCION:
-      MKDISK { mdisk = new obmkdisk();  /*objeto mkdisk*/} COMANDOMKDISK   { mdisk->exec();  /*ejecutar mkdisk*/}
-    | RMDISK { rmdisk = new obrmdisk(); /*objeto rmdisk*/} COMANDORMDISK   { rmdisk->exec(); /*ejecutar rmdisk*/}
-    | FDISK  { fdisk = new obfdisk();   /*objeto fdisk*/ } COMANDOFDISK    { fdisk->exec();  /*ejecutar fdisk*/ }
-    | MOUNT  { mount = new obmount();   /*objeto mount*/ } COMANDOMOUNT    { mount->exec();  /*ejecutar mount*/ }
-    | UMOUNT { umount = new obumount(); /*objeto umount*/} COMANDOUMOUNT   { umount->exec(); /*ejecutar umount*/}
-    | MKFS   { mkfs = new obmkfs();       /*objeto mkfs*/} COMANDOMKFS     { mkfs->exec();     /*ejecutar mkfs*/}
-    | TOUCH  { touch = new obtouch();    /*objeto touch*/} COMANDOTOUCH    { touch->exec();   /*ejecutar touch*/}
-    | MKDIR  { mkdir = new obmkdir();    /*objeto mkdir*/} COMANDOMKDIR    { mkdir->exec();   /*ejecutar mkdir*/}
+      MKDISK { mdisk = new obmkdisk();   /*objeto mkdisk*/} COMANDOMKDISK  { mdisk->exec();  /*ejecutar mkdisk*/}
+    | RMDISK { rmdisk = new obrmdisk();  /*objeto rmdisk*/} COMANDORMDISK  { rmdisk->exec(); /*ejecutar rmdisk*/}
+    | FDISK  { fdisk = new obfdisk();    /*objeto fdisk*/ } COMANDOFDISK   { fdisk->exec();  /*ejecutar fdisk*/ }
+    | MOUNT  { mount = new obmount();    /*objeto mount*/ } COMANDOMOUNT   { mount->exec();  /*ejecutar mount*/ }
+    | UMOUNT { umount = new obumount();  /*objeto umount*/} COMANDOUMOUNT  { umount->exec(); /*ejecutar umount*/}
+    | MKFS   { mkfs = new obmkfs();        /*objeto mkfs*/} COMANDOMKFS    { mkfs->exec();     /*ejecutar mkfs*/}
+    | TOUCH  { touch = new obtouch();     /*objeto touch*/} COMANDOTOUCH   { touch->exec();   /*ejecutar touch*/}
+    | MKDIR  { mkdir = new obmkdir();     /*objeto mkdir*/} COMANDOMKDIR   { mkdir->exec();   /*ejecutar mkdir*/}
+    | REP    { reporte = new obreporte();   /*objeto rep*/} COMANDOREPORTE { reporte->exec();   /*ejecutar rep*/}
 ;
 
 COMANDOMKDISK:
@@ -209,4 +216,21 @@ PARMKDIR: /*parametros para mkdir*/
         MENOS PATH IGUAL RUTA              { mkdir->setPath($4); }
       | MENOS PATH IGUAL CADENA            { mkdir->setPath($4); }
       | MENOS LETRA                        { mkdir->setP($2); }
+;
+
+COMANDOREPORTE:
+        COMANDOREPORTE PARREP   {  }
+      | PARREP                  {  }
+;
+
+PARREP: /*parametros para reporte*/
+        MENOS PATH IGUAL RUTA              { reporte->setPath($4); }
+      | MENOS PATH IGUAL CADENA            { reporte->setPath($4); }
+      | MENOS ID IGUAL CADENA              { reporte->setID($4); }
+      | MENOS ID IGUAL IDMOUNT             { reporte->setID($4); }
+      | MENOS NAME IGUAL CADENA            { reporte->setName($4); }
+      | MENOS NAME IGUAL IDENTIFICADOR     { reporte->setName($4); }
+      | MENOS RUTA IGUAL CADENA            { reporte->setRuta($4); }
+      | MENOS RUTA IGUAL IDENTIFICADOR     { reporte->setRuta($4); }
+      | MENOS ROOT IGUAL POSITIVO          { reporte->setRoot(atoi($4)); }
 ;

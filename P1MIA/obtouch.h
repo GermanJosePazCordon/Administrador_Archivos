@@ -28,17 +28,21 @@ public:
 
     void setStdin();
 
-    void saveSB(Structs::SB sb, string path, int pos);
-
     Structs::SB getSB(string path, int pos);
-
-    void saveJournaling(Structs::Journaling journaling, string path, int pos);
-
-    void addJournaling(string content, string nombre, string path, string operacion, char tipo, int part_start);
 
     Structs::TI getInodo(string path, int pos);
 
     Structs::BC getBC(string path, int pos);
+
+    Structs::BAR getBAR(string path, int pos);
+
+    void saveSB(Structs::SB sb, string path, int pos);
+
+    void saveInodo(Structs::TI inodo, string path, int pos);
+
+    void saveBC(Structs::BC bc, string path, int pos);
+
+    void saveBAR(Structs::BAR bar, string path, int pos);
 
     list<string> separar_carpetas(string path);
 
