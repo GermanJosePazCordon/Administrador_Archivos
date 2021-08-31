@@ -161,11 +161,9 @@ void obmkdir::exec(){
     int inodoAbuelo = 0; //INODOS QUE REVISAMOS ANTERIORMENTE /home/carpeta/caeesa home
     //int journaling = start_particion + sizeof(Structs::SB) + sizeof(Structs::Journaling) * 2;
     bool todas_creadas = true; //VALIDA SI TODAS LAS CARPETAS DE LA RUTA ESTAN CREADAS, ESTO PARA DETERMINAR SI EL ARCHIVO PUEDE ESTAR CREADO O NO
-    cout<<"\nEMPEZANDO"<<endl;
     for (it = lista_carpetas.begin(); it != lista_carpetas.end(); it++) {
         //OBTENEMOS EL SUPER BLOQUE
         sb = this->getSB(path_particion, start_particion);
-        cout<<"\nCARPETA DE LA LISTA : "<<*it<<endl;
         //cout<<"\ninodo : "<<inodoPadre<<endl;
         inodo_actual = this->getInodo(path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
         //PRIMER PASADA, SE VERIFICA SI LA CARPETA ACTUAL ESTA CREADA O NO, NO SE REALIZA NINGUNA ACCION MAS QUE VALIDACIONES
@@ -218,13 +216,6 @@ void obmkdir::exec(){
                                 this->crearCarpeta(sb, inodoPadre, inodoAbuelo, path_particion, start_particion);
                                 carpeta_creada = true;
                                 sb = this->getSB(path_particion, start_particion);
-                                cout<<"\ncarpeta : "<<*it<<" se creo en : "<<endl;
-                                cout<<"\ninodo : "<<inodoAbuelo<<endl;
-                                cout<<"\ninodo.block["<<i<<"] : "<<inodo_actual.block[i]<<endl;
-                                for(int x = 0; x < 4; x++){
-                                    cout<<"\nbloque.content["<<x<<"].name : "<<bc_actual.content[x].name<<endl;
-                                    cout<<"\nbloque.content["<<x<<"].inodo : "<<bc_actual.content[x].inodo<<endl;
-                                }
                                 break;
                             }
                         }
@@ -246,21 +237,17 @@ void obmkdir::exec(){
                             //GUARDANDO LA CARPETA
                             this->saveBC(bc, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                             //ACTUALIZANDO EL SUPER BLOQUE
+                            FILE * file = NULL;
+                            file = fopen(path_particion.c_str(), "rb+");
+                            fseek(file, (sb.bm_block_start + sb.first_blo), SEEK_SET);
+                            fwrite("1", 1, 1, file);
+                            fclose(file);
                             sb.free_blocks_count = sb.blocks_count - 1;
                             sb.first_blo = sb.first_blo + 1;
                             inodoAbuelo = inodoPadre;
                             inodoPadre = sb.firts_ino;
                             this->crearCarpeta(sb, inodoPadre, inodoAbuelo, path_particion, start_particion);
                             carpeta_creada = true;
-                            cout<<"\ncarpeta : "<<*it<<" se creo en : "<<endl;
-                            cout<<"\ninodo : "<<inodoAbuelo<<endl;
-                            cout<<"\ninodo.block["<<i<<"] : "<<inodo_actual.block[i]<<endl;
-                            cout<<"\nbloques : "<<endl;
-                            Structs::BC bc_tmp = this->getBC(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
-                            for(int j = 0; j < 4; j++){
-                                cout<<"\nbloque.content["<<j<<"].name : "<<bc_tmp.content[j].name<<endl;
-                                cout<<"\nbloque.content["<<j<<"].inodo : "<<bc_tmp.content[j].inodo<<endl;
-                            }
                         }else{
                             //ES INDIRECTO
                         }
@@ -286,7 +273,6 @@ void obmkdir::exec(){
         }
         last_name = charPath[i] + last_name;
     }
-    cout<<"\nlast : "<<last_name<<endl;
     while(!lista_carpetas.empty()){
         lista_carpetas.pop_front();
     }
@@ -294,7 +280,6 @@ void obmkdir::exec(){
     for (it = lista_carpetas.begin(); it != lista_carpetas.end(); it++) {
         //OBTENEMOS EL SUPER BLOQUE
         sb = this->getSB(path_particion, start_particion);
-        cout<<"\nCARPETA DE LA LISTA : "<<*it<<endl;
         //cout<<"\ninodo : "<<inodoPadre<<endl;
         inodo_actual = this->getInodo(path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
         //PRIMER PASADA, SE VERIFICA SI LA CARPETA ACTUAL ESTA CREADA O NO, NO SE REALIZA NINGUNA ACCION MAS QUE VALIDACIONES
@@ -346,13 +331,13 @@ void obmkdir::exec(){
                                 this->crearCarpeta(sb, inodoPadre, inodoAbuelo, path_particion, start_particion);
                                 carpeta_creada = true;
                                 sb = this->getSB(path_particion, start_particion);
-                                cout<<"\ncarpeta : "<<*it<<" se creo en : "<<endl;
+                                /*cout<<"\ncarpeta : "<<*it<<" se creo en : "<<endl;
                                 cout<<"\ninodo : "<<inodoAbuelo<<endl;
                                 cout<<"\ninodo.block["<<i<<"] : "<<inodo_actual.block[i]<<endl;
                                 for(int x = 0; x < 4; x++){
                                     cout<<"\nbloque.content["<<x<<"].name : "<<bc_actual.content[x].name<<endl;
                                     cout<<"\nbloque.content["<<x<<"].inodo : "<<bc_actual.content[x].inodo<<endl;
-                                }
+                                }*/
                                 break;
                             }
                         }
@@ -374,21 +359,17 @@ void obmkdir::exec(){
                             //GUARDANDO LA CARPETA
                             this->saveBC(bc, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                             //ACTUALIZANDO EL SUPER BLOQUE
+                            FILE * file = NULL;
+                            file = fopen(path_particion.c_str(), "rb+");
+                            fseek(file, (sb.bm_block_start + sb.first_blo), SEEK_SET);
+                            fwrite("1", 1, 1, file);
+                            fclose(file);
                             sb.free_blocks_count = sb.blocks_count - 1;
                             sb.first_blo = sb.first_blo + 1;
                             inodoAbuelo = inodoPadre;
                             inodoPadre = sb.firts_ino;
                             this->crearCarpeta(sb, inodoPadre, inodoAbuelo, path_particion, start_particion);
                             carpeta_creada = true;
-                            cout<<"\ncarpeta : "<<*it<<" se creo en : "<<endl;
-                            cout<<"\ninodo : "<<inodoAbuelo<<endl;
-                            cout<<"\ninodo.block["<<i<<"] : "<<inodo_actual.block[i]<<endl;
-                            cout<<"\nbloques : "<<endl;
-                            Structs::BC bc_tmp = this->getBC(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
-                            for(int j = 0; j < 4; j++){
-                                cout<<"\nbloque.content["<<j<<"].name : "<<bc_tmp.content[j].name<<endl;
-                                cout<<"\nbloque.content["<<j<<"].inodo : "<<bc_tmp.content[j].inodo<<endl;
-                            }
                         }else{
                             //ES INDIRECTO
                         }
@@ -431,9 +412,9 @@ void obmkdir::crearCarpeta(Structs::SB sb, int inodoPadre, int inodoAbuelo, stri
     //SETEANDO LOS BITMAPS
     FILE * file = NULL;
     file = fopen(path.c_str(), "rb+");
-    fseek(file, sb.firts_ino, SEEK_SET);
+    fseek(file, (sb.bm_inode_start + sb.firts_ino), SEEK_SET);
     fwrite("1", 1, 1, file);
-    fseek(file, sb.first_blo, SEEK_SET);
+    fseek(file, (sb.bm_block_start + sb.first_blo), SEEK_SET);
     fwrite("1", 1, 1, file);
     fclose(file);
     //ACTUALIZANDO EL SUPER BLOQUE

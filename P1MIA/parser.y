@@ -32,6 +32,18 @@ obmkdir * mkdir;
 #include "obreporte.h"
 obreporte * reporte;
 
+#include "obcat.h"
+obcat * cat;
+
+#include "obren.h"
+obren * ren;
+
+#include "obrm.h"
+obrm * rm;
+
+#include "obedit.h"
+obedit * edit;
+
 using namespace std;
 extern int yylineno; //linea actual donde se encuentra el parser (analisis lexico) lo maneja BISON
 extern int columna; //columna actual donde se encuentra el parser (analisis lexico) lo maneja BISON
@@ -66,6 +78,10 @@ char TEXT[256];
 %token<TEXT> TOUCH;
 %token<TEXT> MKDIR;
 %token<TEXT> REP;
+%token<TEXT> CAT;
+%token<TEXT> REN;
+%token<TEXT> RM;
+%token<TEXT> EDIT;
 
 //PARAMETROS
 %token<TEXT> SIZE;
@@ -124,6 +140,10 @@ INSTRUCCION:
     | TOUCH  { touch = new obtouch();     /*objeto touch*/} COMANDOTOUCH   { touch->exec();   /*ejecutar touch*/}
     | MKDIR  { mkdir = new obmkdir();     /*objeto mkdir*/} COMANDOMKDIR   { mkdir->exec();   /*ejecutar mkdir*/}
     | REP    { reporte = new obreporte();   /*objeto rep*/} COMANDOREPORTE { reporte->exec();   /*ejecutar rep*/}
+    | CAT    { cat = new obcat();           /*objeto cat*/} COMANDOCAT     { cat->exec();       /*ejecutar cat*/}
+    | REN    { ren = new obren();           /*objeto ren*/} COMANDOREN     { ren->exec();       /*ejecutar ren*/}
+    | RM     { rm = new obrm();              /*objeto rm*/} COMANDORM      { rm->exec();         /*ejecutar rm*/}
+    | EDIT   { edit = new obedit();        /*objeto edit*/} COMANDOEDIT    { edit->exec();     /*ejecutar edit*/}
 ;
 
 COMANDOMKDISK:
@@ -234,3 +254,49 @@ PARREP: /*parametros para reporte*/
       | MENOS RUTA IGUAL IDENTIFICADOR     { reporte->setRuta($4); }
       | MENOS ROOT IGUAL POSITIVO          { reporte->setRoot(atoi($4)); }
 ;
+
+COMANDOCAT:
+        COMANDOCAT PARCAT     {  }
+      | PARCAT                {  }
+;
+
+PARCAT: /*parametros para cat*/
+        MENOS IDENTIFICADOR IGUAL RUTA     { cat->addFile($2, $4); }
+      | MENOS IDENTIFICADOR IGUAL CADENA   { cat->addFile($2, $4); }
+;
+
+COMANDOREN:
+        COMANDOREN PARREN     {  }
+      | PARREN                {  }
+;
+
+PARREN: /*parametros para ren*/
+        MENOS PATH IGUAL RUTA            { ren->setPath($4); }
+      | MENOS PATH IGUAL CADENA          { ren->setPath($4); }
+      | MENOS NAME IGUAL IDENTIFICADOR   { ren->setName($4); }
+      | MENOS NAME IGUAL CADENA          { ren->setName($4); }
+;
+
+COMANDORM:
+        COMANDORM PARRM     {  }
+      | PARRM               {  }
+;
+
+PARRM: /*parametros para rm*/
+        MENOS PATH IGUAL RUTA       { rm->setPath($4); }
+      | MENOS PATH IGUAL CADENA     { rm->setPath($4); }
+;
+
+COMANDOEDIT:
+        COMANDOEDIT PAREDIT   {  }
+      | PAREDIT               {  }
+;
+
+PAREDIT: /*parametros para edit*/
+        MENOS PATH IGUAL RUTA       { edit->setPath($4); }
+      | MENOS PATH IGUAL CADENA     { edit->setPath($4); }
+      | MENOS CONT IGUAL RUTA       { edit->setCont($4); }
+      | MENOS CONT IGUAL CADENA     { edit->setCont($4); }
+      | MENOS STDIN                 { edit->setStdin(); }
+;
+

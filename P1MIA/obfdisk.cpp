@@ -269,7 +269,6 @@ void obfdisk::bubbleSort(){
 }
 
 void obfdisk::exec(){
-    cout<<"\nFDISK"<<endl;
     if(validarParametros()){
         cout<<"\nNo se pudo crear la particion"<<endl;
     }else{
@@ -278,7 +277,7 @@ void obfdisk::exec(){
             return;
         }
         init();
-        int inicio = 0;
+        /*int inicio = 0;
         for(int i = 0; i < 4; i++){
             cout<<"---------------- PARTICION "<<i<<" ----------------"<<endl;
             cout<<"name : "<<this->mbr.particiones[i].name<<endl;
@@ -310,8 +309,7 @@ void obfdisk::exec(){
                 }
                 i +=1;
             }
-        }
-
+        }*/
     }
 }
 

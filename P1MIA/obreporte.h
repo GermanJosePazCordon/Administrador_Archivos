@@ -49,6 +49,8 @@ public:
 
     string graphBAR(int bloque, string path, int start);
 
+    string graphSB(string path, int start);
+
     string graphMBR(string path);
 
     string graphDisk(string path);

@@ -24,7 +24,13 @@ void obreporte::setPath(string path){
 }
 
 void obreporte::setName(string name){
-    string data = name;
+    if(name[0] == '"'){
+        this->name = name.substr(1, name.size()-1);
+        this->name = this->name.substr(0, this->name.size()-1);
+    }else{
+        this->name = name;
+    }
+    string data = this->name;
     std::transform(data.begin(), data.end(), data.begin(),
         [](unsigned char c){ return std::tolower(c); });
     name = data;
@@ -193,6 +199,12 @@ void obreporte::exec(){
         string content;
         content +="\ndigraph rep{";
         content += this->graphDisk(path_partition);
+        content +="\n}";
+        this->generarDot(content);
+    }else if(this->name == "sb"){
+        string content;
+        content +="\ndigraph rep{";
+        content += this->graphSB(path_partition, particion.start);
         content +="\n}";
         this->generarDot(content);
     }
@@ -522,6 +534,40 @@ string obreporte::graphBAR(int bloque, string path, int start){
     grafico += "\n<TR><TD color='yellow'>BLOCK</TD><TD color='yellow'>" + to_string(bloque) + "</TD></TR>";
     string tmp = archivo.content;
     grafico += "\n<TR><TD>" + tmp +  "</TD><TD></TD></TR>";
+    grafico +="\n</TABLE>>];";
+    return grafico;
+}
+
+string obreporte::graphSB(string path, int start){
+    Structs::SB sb = this->getSB(path, start);
+    string grafico;
+    grafico += "\nmbr[shape=none, margin=0, label=<";
+    grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
+    grafico += "\n<TR><TD>Nombre</TD><TD>Valor</TD></TR>";
+    grafico += "\n<TR><TD>s_inodes_count</TD><TD>" + to_string(sb.inodes_count) + "</TD></TR>";
+    grafico += "\n<TR><TD>s_blocks_count</TD><TD>" + to_string(sb.blocks_count) + "</TD></TR>";
+    grafico += "\n<TR><TD>s_free_blocks_count</TD><TD>" + to_string(sb.free_blocks_count) + "</TD></TR>";
+    grafico += "\n<TR><TD>s_free_inodes_count</TD><TD>" + to_string(sb.free_inodes_count) + "</TD></TR>";
+    string tmp;
+    char date[16];
+    strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&sb.mtime));
+    tmp = date;
+    grafico += "\n<TR><TD>s_mtime</TD><TD>" + tmp + "</TD></TR>";
+    strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&sb.umtime));
+    tmp = date;
+    grafico += "\n<TR><TD>s_umtime</TD><TD>" + tmp + "</TD></TR>";
+    strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&sb.mtime));
+    tmp = date;
+    grafico += "\n<TR><TD>s_mnt_count</TD><TD>" + tmp + "</TD></TR>";
+    grafico += "\n<TR><TD>s_magic</TD><TD>0xEF53</TD></TR>";
+    grafico += "\n<TR><TD>s_inode_size</TD><TD>" + to_string(sb.inode_size) + "</TD></TR>";
+    grafico += "\n<TR><TD>s_block_size</TD><TD>" + to_string(sb.block_size) + "</TD></TR>";
+    grafico += "\n<TR><TD>s_first_ino</TD><TD>" + to_string(sb.firts_ino) + "</TD></TR>";
+    grafico += "\n<TR><TD>s_first_blo</TD><TD>" + to_string(sb.first_blo) + "</TD></TR>";
+    grafico += "\n<TR><TD>s_bm_inode_start</TD><TD>" + to_string(sb.bm_inode_start) + "</TD></TR>";
+    grafico += "\n<TR><TD>s_bm_block_start</TD><TD>" + to_string(sb.bm_block_start) + "</TD></TR>";
+    grafico += "\n<TR><TD>s_inode_start</TD><TD>" + to_string(sb.inode_start) + "</TD></TR>";
+    grafico += "\n<TR><TD>s_block_start</TD><TD>" + to_string(sb.block_start) + "</TD></TR>";
     grafico +="\n</TABLE>>];";
     return grafico;
 }

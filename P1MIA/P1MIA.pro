@@ -22,7 +22,11 @@ SOURCES += main.cpp \
     obmkdirr.cpp \
     obmkdirr.cpp \
     obmkdir.cpp \
-    obreporte.cpp
+    obreporte.cpp \
+    obcat.cpp \
+    obren.cpp \
+    obrm.cpp \
+    obedit.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -52,7 +56,11 @@ HEADERS += \
     obmkfs.h \
     obtouch.h \
     obmkdir.h \
-    obreporte.h
+    obreporte.h \
+    obcat.h \
+    obren.h \
+    obrm.h \
+    obedit.h
 
 SUBDIRS += \
     P1MIA.pro

@@ -31,8 +31,6 @@ public:
 
     void exec();
 
-    void xd();
-
 };
 
 #endif // OBMKFS_H

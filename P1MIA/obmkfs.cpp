@@ -48,17 +48,6 @@ void obmkfs::saveJournaling(Structs::Journaling journaling, string path, int pos
     fclose(file);
 }
 
-//ELIMINAR GET CUANDO ELIMINE EL XD
-Structs::Journaling obmkfs::getJournaling(string path, int pos){
-    Structs::Journaling tmp_journaling;
-    FILE * file = NULL;
-    file = fopen(path.c_str(), "rb+");
-    fseek(file, pos, SEEK_SET);
-    fread(&tmp_journaling, sizeof(Structs::Journaling), 1, file);
-    fclose(file);
-    return tmp_journaling;
-}
-
 void obmkfs::addJournaling(string content, string nombre, string path, string operacion, char tipo, int pos){
     Structs::Journaling jng;
     strcpy(jng.contenido, content.c_str());
@@ -71,11 +60,6 @@ void obmkfs::addJournaling(string content, string nombre, string path, string op
 }
 
 void obmkfs::exec(){
-    cout<<"\nMKFs"<<endl;
-    if(false){
-        xd();
-        return;
-    }
     Structs::Discos discoMontado;
     Structs::particionMontada particionMontada;
     Structs::partition particion;
@@ -283,84 +267,4 @@ void obmkfs::exec(){
         fwrite("0", 1, 1, file);
     }
     fclose(file);
-    //cout<<"\nAQUIIIIIIIIIIIIIIIII"<<endl;
 }
-
-void obmkfs::xd(){
-    Structs::SB sb;
-    Structs::TI inodo;
-    Structs::BC carpeta;
-    Structs::BAR archivo;
-    Structs::Journaling jng;
-    FILE * file = NULL;
-    file = fopen("/home/monsterxd/Escritorio/Disco3.disk", "rb+");
-    fseek(file, 136, SEEK_SET);
-    fread(&sb, sizeof(Structs::SB), 1, file);
-    fclose(file);
-    cout<<"\nparticion start : "<<136<<endl;
-    cout<<"\njournaling : "<<sb.bm_inode_start - 136 - sizeof(Structs::SB)<<endl;
-    cout<<"\nbm inode start : "<<sb.bm_inode_start<<endl;
-    cout<<"\nbm block start : "<<sb.bm_block_start<<endl;
-    cout<<"\ninode start : "<<sb.inode_start<<endl;
-    cout<<"\nblock start : "<<sb.block_start<<endl;
-    cout<<"\n-------------------------------------------------------------------"<<endl;
-    file = fopen("/home/monsterxd/Escritorio/Disco3.disk", "rb+");
-    fseek(file, sb.inode_start, SEEK_SET);
-    fread(&inodo, sizeof(Structs::TI), 1, file);
-    fclose(file);
-    cout<<"\ninodo type : "<<inodo.type<<endl;
-    cout<<"\ninodo uid : "<<inodo.uid<<endl;
-    cout<<"\ninodo gid : "<<inodo.gid<<endl;
-    cout<<"\ninodo size : "<<inodo.size<<endl;
-    for(int i = 0; i < 15; i++){
-        cout<<"\ninodo block["<<i<<"] : "<<inodo.block[i]<<endl;
-    }
-    cout<<"\n-------------------------------------------------------------------"<<endl;
-    file = fopen("/home/monsterxd/Escritorio/Disco3.disk", "rb+");
-    fseek(file, sb.inode_start + sizeof(Structs::TI), SEEK_SET);
-    fread(&inodo, sizeof(Structs::TI), 1, file);
-    fclose(file);
-    cout<<"\ninodo type : "<<inodo.type<<endl;
-    cout<<"\ninodo uid : "<<inodo.uid<<endl;
-    cout<<"\ninodo gid : "<<inodo.gid<<endl;
-    cout<<"\ninodo size : "<<inodo.size<<endl;
-    for(int i = 0; i < 15; i++){
-        cout<<"\ninodo block["<<i<<"] : "<<inodo.block[i]<<endl;
-    }
-    cout<<"\n-------------------------------------------------------------------"<<endl;
-    file = fopen("/home/monsterxd/Escritorio/Disco3.disk", "rb+");
-    fseek(file, sb.block_start, SEEK_SET);
-    fread(&carpeta, sizeof(Structs::BC), 1, file);
-    fclose(file);
-    cout<<"\ncarpeta inodo [0]: "<<carpeta.content[0].inodo<<endl;
-    cout<<"\ncarpeta name  [0]: "<<carpeta.content[0].name<<endl;
-    cout<<"\ncarpeta inodo [1]: "<<carpeta.content[1].inodo<<endl;
-    cout<<"\ncarpeta name  [1]: "<<carpeta.content[1].name<<endl;
-    cout<<"\ncarpeta inodo [2]: "<<carpeta.content[2].inodo<<endl;
-    cout<<"\ncarpeta name  [2]: "<<carpeta.content[2].name<<endl;
-    cout<<"\n-------------------------------------------------------------------"<<endl;
-    file = fopen("/home/monsterxd/Escritorio/Disco3.disk", "rb+");
-    fseek(file, sb.block_start + sizeof(Structs::BC), SEEK_SET);
-    fread(&archivo, sizeof(Structs::BAR), 1, file);
-    fclose(file);
-    cout<<"\narchivo content : "<<archivo.content<<endl;
-    cout<<"\n-------------------------------------------------------------------"<<endl;
-    jng = this->getJournaling("/home/monsterxd/Escritorio/Disco3.disk", (136 + sizeof(Structs::SB)));
-    cout<<"\njng operacion : "<<jng.operacion<<endl;
-    cout<<"\njng tipo : "<<jng.tipo<<endl;
-    cout<<"\njng path : "<<jng.path<<endl;
-    cout<<"\njng contenido : \n"<<jng.contenido<<endl;
-    char date[16];
-    strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&jng.date));
-    cout<<"\njng date : "<<date<<endl;
-    cout<<"\n-------------------------------------------------------------------"<<endl;
-    jng = this->getJournaling("/home/monsterxd/Escritorio/Disco3.disk", (136 + sizeof(Structs::SB) + sizeof(Structs::Journaling)));
-    cout<<"\njng operacion : "<<jng.operacion<<endl;
-    cout<<"\njng tipo : "<<jng.tipo<<endl;
-    cout<<"\njng path : "<<jng.path<<endl;
-    cout<<"\njng contenido : \n"<<jng.contenido<<endl;
-    date[16];
-    strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&jng.date));
-    cout<<"\njng date : "<<date<<endl;
-}
-

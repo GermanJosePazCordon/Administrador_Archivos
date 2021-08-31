@@ -23,7 +23,7 @@ letra [a-zA-ZÑñáéíóúÁÉÍÓÚ]
 positivo ([1-9]|0?)+
 
 
-identificador {letra}({letra}|{numero}|"_")*
+identificador {letra}({letra}|{numero}|"_"|".")*
 idmount {numero}{numero}{numero}({letra})+
 idfs {numero}("fs"|"FS"|"Fs"|"fS")
 cadena [\"][^\"\n]*[\"\n]
@@ -43,6 +43,10 @@ ruta (([/]([a-zA-Z]|[0-9]|"_"|".")+)+)
 "TOUCH" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return TOUCH;}
 "MKDIR" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return MKDIR;}
 "REP" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return REP;}
+"CAT" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return CAT;}
+"REN" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return REN;}
+"RM" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return RM;}
+"EDIT" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return EDIT;}
 
 "SIZE" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return SIZE;}
 "PATH" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return PATH;}
