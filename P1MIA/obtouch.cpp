@@ -3,6 +3,7 @@
 #include "structs.h"
 #include "list"
 #include "fstream"
+#include "obedit.h"
 
 using namespace std;
 
@@ -328,7 +329,6 @@ void obtouch::exec(){
                 for(int j = 0; j < 4; j++){
                     //VERIFICAMOS SI EL NODO ACTUAL ESTA INACTIVO, DE ESTARLO CREAMOS LA CARPETA
                     if(bc_actual.content[j].inodo == -1){
-                        cout<<"entre"<<endl;
                         bc_actual.content[j].inodo = sb.firts_ino;
                         strcpy(bc_actual.content[j].name, file_name.c_str());
                         //GUARDANDO LA CARPETA
@@ -368,9 +368,23 @@ void obtouch::exec(){
             if(inodo_actual.block[i] != -1){
                 bc_actual = this->getBC(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                 for(int j = 0; j < 4; j++){
-                    //cout<<bc_actual.content[j].name <<" == "<<file_name<<endl;
                     if(strcmp(bc_actual.content[j].name, file_name.c_str()) == 0){
                         cout<<"\nYa existe el archivo : "<<file_name<<endl;
+                        cout<<"\nDesea sobreescribirlo? [s/n]"<<endl;
+                        string tmp;
+                        cin>>tmp;
+                        if(tmp == "s" || tmp == "S"){
+                            if(this->cont == "" && !this->stdi && this->size == 0){
+                                cout<<"\nNo hay informacion para escribir en el archivo"<<endl;
+                                return;
+                            }
+                            obedit * edit = new obedit();
+                            edit->setPath(this->path);
+                            edit->content = content;
+                            edit->exec();
+                            return;
+                        }
+                        cout<<"\nEl archivo no fue modificado"<<endl;
                         return;
                     }
                     //VERIFICAMOS SI EL NODO ACTUAL ESTA INACTIVO, DE ESTARLO CREAMOS LA CARPETA

@@ -14,6 +14,7 @@ public:
 
     string path = "";
     string cont = "";
+    string content = "";
     bool stdi = false;
 
     void setPath(string path);
@@ -29,6 +30,10 @@ public:
     Structs::BC getBC(string path, int pos);
 
     Structs::BAR getBAR(string path, int pos);
+
+    void saveSB(Structs::SB sb, string path, int pos);
+
+    void saveInodo(Structs::TI inodo, string path, int pos);
 
     void saveBAR(Structs::BAR bar, string path, int pos);
 

@@ -2,6 +2,7 @@
 #include "iostream"
 #include "structs.h"
 #include "fstream"
+#include "list"
 
 using namespace std;
 
@@ -42,7 +43,12 @@ void obreporte::setID(string id){
 }
 
 void obreporte::setRuta(string ruta){
-    this->ruta = ruta;
+    if(ruta[0] == '"'){
+        this->ruta = ruta.substr(1, ruta.size()-1);
+        this->ruta = this->ruta.substr(0, this->ruta.size()-1);
+    }else{
+        this->ruta = ruta;
+    }
 }
 
 void obreporte::setRoot(int root){
@@ -152,6 +158,26 @@ Structs::BAR obreporte::getBAR(string path, int pos){
     return bar;
 }
 
+list<string> obreporte::separar_carpetas(string path) {
+    if (path[0] == '/') {
+        path = path.substr(1, path.length());
+    }
+    list<string> lista_carpetas;
+    char ruta[path.length() + 1];
+    strcpy(ruta, path.c_str());
+    string nombre_carpeta;
+    for (int i = 0; i < path.length() + 1; i++) {
+        if (ruta[i] == '/' || i == path.length()) {
+            lista_carpetas.push_back(nombre_carpeta);
+            nombre_carpeta.clear();
+            continue;
+        }
+        nombre_carpeta += ruta[i];
+    }
+    return lista_carpetas;
+}
+
+
 void obreporte::exec(){
     if(this->path == ""){
         cout<<"\nRuta vacia."<<endl;
@@ -205,6 +231,87 @@ void obreporte::exec(){
         string content;
         content +="\ndigraph rep{";
         content += this->graphSB(path_partition, particion.start);
+        content +="\n}";
+        this->generarDot(content);
+    }else if(this->name == "inode"){
+        string content;
+        content +="\ndigraph rep{";
+        content+= "\ninode[shape=none, margin=0, label=<";
+        content += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
+        content += "\n<TR><TD>Index</TD><TD>Tipo</TD><TD>Nombre</TD></TR>";
+        content += this->graphUsedInode(0, "/", path_partition, particion.start);
+        content += "\n</TABLE>>];";
+        content +="\n}";
+        this->generarDot(content);
+    }else if(this->name == "block"){
+        string content;
+        content +="\ndigraph rep{";
+        content+= "\nrankdir=TB";
+        content += this->graphUsedBlockInode(0, path_partition, particion.start);
+        content +="\n}";
+        this->generarDot(content);
+    }else if(this->name == "bm_inode"){
+        string content;
+        content +="\ndigraph rep{";
+        content += this->graphBMInode(path_partition, particion.start);
+        content +="\n}";
+        this->generarDot(content);
+    }else if(this->name == "bm_block"){
+        string content;
+        content +="\ndigraph rep{";
+        content += this->graphBMBlock(path_partition, particion.start);
+        content +="\n}";
+        this->generarDot(content);
+    }else if(this->name == "file"){
+        if(this->ruta == ""){
+            cout<<"\nRuta del archivo invalida."<<endl;
+            return;
+        }
+        list<string> lista_carpetas;
+        list<string>::iterator it;
+        lista_carpetas = separar_carpetas(this->ruta);
+        Structs::SB sb;
+        Structs::TI inodo_actual;
+        Structs::BC bc_actual;
+        int inodoPadre = 0;
+        int inodoAbuelo = 0;
+        string file_name;
+        for(it = lista_carpetas.begin(); it != lista_carpetas.end(); it++){
+            file_name = *it;
+            bool carpeta_existente = false;
+            sb = this->getSB(path_partition, particion.start);
+            inodo_actual = this->getInodo(path_partition, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
+            for(int i = 0; i < 15; i++){
+                if(inodo_actual.block[i] != -1){
+                    //POSICIONAMOS EL BLOQUE ACTUAL PARA PODER ACCEDER A SU CONTENIDO
+                    bc_actual = this->getBC(path_partition, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
+                    for(int j = 0; j < 4; j++){
+                        string name = *it;
+                        if(strcmp(bc_actual.content[j].name, name.c_str()) == 0){
+                            //CARPETA ENCONTRADA EN LA POSICION i DEL PRIMER BLOQUE DEL NODOD
+                            carpeta_existente = true;
+                            inodoAbuelo = inodoPadre;
+                            inodoPadre = bc_actual.content[j].inodo;
+                        }
+                    }
+                }
+            }
+            if(!carpeta_existente){
+                cout<<"\nNo existe la carpeta : "<<*it<<endl;
+                return;
+            }else{
+                continue;
+            }
+        }
+        sb = this->getSB(path_partition, particion.start);
+        inodo_actual = this->getInodo(path_partition, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
+        if(inodo_actual.type == '0'){
+            cout<<"\nNo existe el archivo : "<<file_name<<endl;
+            return;
+        }
+        string content;
+        content +="\ndigraph rep{";
+        content += this->graphFile(path_partition, this->ruta, particion.start, inodoPadre, file_name);
         content +="\n}";
         this->generarDot(content);
     }
@@ -268,7 +375,7 @@ string obreporte::graphMBR(string path){
             }
         }
     }
-    grafico +="\n</TABLE>>];";
+    grafico += "\n</TABLE>>];";
     if(start_logic != 0){
         bool seguimos = true;
         int i = 0;
@@ -436,6 +543,148 @@ string obreporte::graphDisk(string path){
     return grafico;
 }
 
+string obreporte::graphUsedInode(int root, string name, string path, int start){
+    Structs::SB sb = this->getSB(path, start);
+    Structs::TI inodo = this->getInodo(path, (sb.inode_start + root * sizeof(Structs::TI)));
+    Structs::BC bc;
+    string grafico;
+    string tmp = name;
+    if(name != "/"){
+        tmp = name.substr(0, name.length() - 1);
+    }
+    if(inodo.type == '0'){
+        grafico += "<TR><TD>" + to_string(root) + "</TD><TD>Folder</TD><TD>" + tmp + "</TD></TR>";
+    }else{
+        grafico += "<TR><TD>" + to_string(root) + "</TD><TD>Archivo</TD><TD>" + tmp + "</TD></TR>";
+    }
+    for(int i = 0; i < 15; i++){
+        if(inodo.block[i] != -1 && i < 12){
+            if(inodo.type == '0'){
+                bc = this->getBC(path, (sb.block_start + inodo.block[i] * sizeof(Structs::BC)));
+                for(int j = 0; j < 4; j++){
+                    tmp = bc.content[j].name;
+                    if(bc.content[j].inodo != -1 && tmp != "." && tmp != ".."){
+                        string tmp2 = name + tmp + "/";
+                        grafico += this->graphUsedInode(bc.content[j].inodo, tmp2, path, start);
+                    }
+                }
+            }
+        }else{/*INDIRECTO*/}
+    }
+    return grafico;
+}
+
+string obreporte::graphUsedBlockInode(int root, string path, int start){
+    Structs::SB sb = this->getSB(path, start);
+    Structs::TI inodo = this->getInodo(path, (sb.inode_start + root * sizeof(Structs::TI)));
+    string grafico;
+    for(int i = 0; i < 15; i++){
+        if(inodo.block[i] != -1 && i < 12){
+            if(inodo.type == '0'){
+                grafico += this->graphUsedBlockBC(inodo.block[i], path, start);
+            }else{
+                grafico += this->graphUsedBlockBAR(inodo.block[i], path, start);
+            }
+        }else{/*INDIRECTO*/}
+    }
+    return grafico;
+}
+
+string obreporte::graphUsedBlockBC(int bloque, string path, int start){
+    Structs::SB sb = this->getSB(path, start);
+    Structs::BC bc = this->getBC(path, (sb.block_start + bloque * sizeof(Structs::BC)));
+    string grafico;
+    grafico += "\nbloque" + to_string(bloque) + "[shape=none, margin=0, label=<";
+    grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
+    grafico += "\n<TR><TD colspan='2'>Bloque Carpeta " + to_string(bloque) + "</TD></TR>";
+    grafico += "\n<TR><TD>NAME</TD><TD>INODO</TD></TR>";
+    string tmp;
+    for(int i = 0; i < 4; i++){
+        tmp = bc.content[i].name;
+        if(bc.content[i].inodo != -1){
+            grafico += "\n<TR><TD>" + tmp + "</TD><TD>" + to_string(bc.content[i].inodo) + "</TD></TR>";
+        }else{
+            grafico += "\n<TR><TD>--</TD><TD>-1</TD></TR>";
+        }
+
+    }
+    grafico +="\n</TABLE>>];";
+    for(int i = 0; i < 4; i++){
+        tmp = bc.content[i].name;
+        if(bc.content[i].inodo != -1 && tmp != "." && tmp != ".."){
+            grafico += this->graphUsedBlockInode(bc.content[i].inodo, path, start);
+        }
+    }
+    return grafico;
+}
+
+string obreporte::graphUsedBlockBAR(int bloque, string path, int start){
+    Structs::SB sb = this->getSB(path, start);
+    Structs::BAR archivo = this->getBAR(path, (sb.block_start + bloque * sizeof(Structs::BAR)));
+    string grafico;
+    grafico += "\nbloque" + to_string(bloque) + "[shape=none, margin=0, label=<";
+    grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
+    grafico += "\n<TR><TD>Bloque Archivo " + to_string(bloque) +"</TD></TR>";
+    string tmp = archivo.content;
+    grafico += "\n<TR><TD>" + tmp + "</TD></TR>";
+    grafico +="\n</TABLE>>];";
+    return grafico;
+}
+
+string obreporte::graphBMInode(string path, int start){
+    Structs::SB sb = this->getSB(path, start);
+    string grafico;
+    grafico += "\nbminode[shape=none, margin=0, label=<";
+    grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
+    grafico += "\n<TR><TD>Bit Map Inodos</TD></TR>";
+    string tmp;
+    char carac;
+    int cont = 0;
+    for(int i = sb.bm_inode_start; i < sb.bm_block_start; i++){
+        FILE * file = NULL;
+        file = fopen(path.c_str(), "rb+");
+        fseek(file, i, SEEK_SET);
+        fread(&carac, 1, 1, file);
+        fclose(file);
+        if(cont > 32){
+            grafico += "\n<TR><TD>" + tmp + "</TD></TR>";
+            cont = 0;
+            tmp = "";
+        }
+        tmp += carac;
+        cont += 1;
+    }
+    grafico += "\n</TABLE>>];";
+    return grafico;
+}
+
+string obreporte::graphBMBlock(string path, int start){
+    Structs::SB sb = this->getSB(path, start);
+    string grafico;
+    grafico += "\nbminode[shape=none, margin=0, label=<";
+    grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
+    grafico += "\n<TR><TD>Bit Map Bloques</TD></TR>";
+    string tmp;
+    char carac;
+    int cont = 0;
+    for(int i = sb.bm_block_start; i < sb.inode_start; i++){
+        FILE * file = NULL;
+        file = fopen(path.c_str(), "rb+");
+        fseek(file, i, SEEK_SET);
+        fread(&carac, 1, 1, file);
+        fclose(file);
+        if(cont > 32){
+            grafico += "\n<TR><TD>" + tmp + "</TD></TR>";
+            cont = 0;
+            tmp = "";
+        }
+        tmp += carac;
+        cont += 1;
+    }
+    grafico += "\n</TABLE>>];";
+    return grafico;
+}
+
 string obreporte::graphInodo(int root, string path, int start){
     Structs::SB sb = this->getSB(path, start);
     Structs::TI inodo = this->getInodo(path, (sb.inode_start + root * sizeof(Structs::TI)));
@@ -569,6 +818,31 @@ string obreporte::graphSB(string path, int start){
     grafico += "\n<TR><TD>s_inode_start</TD><TD>" + to_string(sb.inode_start) + "</TD></TR>";
     grafico += "\n<TR><TD>s_block_start</TD><TD>" + to_string(sb.block_start) + "</TD></TR>";
     grafico +="\n</TABLE>>];";
+    return grafico;
+}
+
+string obreporte::graphFile(string path, string ruta, int start, int inodoPadre, string file_name){
+    string grafico;
+    grafico += "\nfile[shape=none, margin=0, label=<";
+    grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
+    grafico += "\n<TR><TD>Nombre : </TD><TD>" + file_name + "</TD></TR>";
+    grafico += "\n<TR><TD>Ruta : </TD><TD>" + ruta + "</TD></TR>";
+    grafico += "\n<TR><TD>Bloque</TD><TD>Contenido</TD></TR>";
+    Structs::SB sb = this->getSB(path, start);
+    Structs::TI inodo_actual = this->getInodo(path, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
+    Structs::BAR archivo;
+    string content;
+    for(int i = 0; i < 15; i++){
+        if(inodo_actual.block[i] != -1 && i < 12){
+            archivo = this->getBAR(path, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BAR)));
+            string tmp = archivo.content;
+            tmp = tmp.substr(0, tmp.length() - 1);
+            content += tmp;
+        }else{/*INDIRECTOS*/}
+    }
+    grafico += "\n<TR><TD>Contenido :</TD><TD>" + content + "</TD></TR>";
+    grafico += "\n</TABLE>>];";
+    cout<<grafico<<endl;
     return grafico;
 }
 

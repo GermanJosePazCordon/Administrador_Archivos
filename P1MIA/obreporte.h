@@ -3,6 +3,7 @@
 #include <QString>
 #include "string"
 #include "structs.h"
+#include "list"
 
 using namespace std;
 
@@ -39,6 +40,8 @@ public:
 
     Structs::BAR getBAR(string path, int pos);
 
+    list<string> separar_carpetas(string path);
+
     bool validarName();
 
     string getExt();
@@ -51,9 +54,23 @@ public:
 
     string graphSB(string path, int start);
 
+    string graphFile(string path, string ruta, int start, int inodoPadre, string file_name);
+
     string graphMBR(string path);
 
     string graphDisk(string path);
+
+    string graphUsedInode(int root, string name, string path, int start);
+
+    string graphUsedBlockInode(int root, string path, int start);
+
+    string graphUsedBlockBC(int bloque, string path, int start);
+
+    string graphUsedBlockBAR(int bloque, string path, int start);
+
+    string graphBMInode(string path, int start);
+
+    string graphBMBlock(string path, int start);
 
     void generarDot(string content);
 

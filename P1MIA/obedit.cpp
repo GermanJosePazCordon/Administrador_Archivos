@@ -77,6 +77,22 @@ Structs::BAR obedit::getBAR(string path, int pos){
     return bar;
 }
 
+void obedit::saveSB(Structs::SB sb, string path, int pos){
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fwrite(&sb, sizeof(Structs::SB), 1, file);
+    fclose(file);
+}
+
+void obedit::saveInodo(Structs::TI inodo, string path, int pos){
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fwrite(&inodo, sizeof(Structs::TI), 1, file);
+    fclose(file);
+}
+
 void obedit::saveBAR(Structs::BAR bar, string path, int pos){
     FILE * file = NULL;
     file = fopen(path.c_str(), "rb+");
@@ -84,7 +100,6 @@ void obedit::saveBAR(Structs::BAR bar, string path, int pos){
     fwrite(&bar, sizeof(Structs::BAR), 1, file);
     fclose(file);
 }
-
 
 list<string> obedit::separar_carpetas(string path) {
     if (path[0] == '/') {
@@ -167,21 +182,21 @@ void obedit::exec(){
         cout<<"\nLa ruta ingresada es de la carpeta : "<<file_name<<endl;
         return;
     }
-    string content;
     if(cont != ""){
         //RECUPERAMOS DE LA RUTA
         ifstream in(this->cont);
         string contents((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-        content = contents;
+        this->content = contents;
     }else if(this->stdi){
         //RECUPERAMOS LA ENTRADA
         cout<<"\nIngrese el texto a guardar en el archivo : \n"<<endl;
-        cin>>content;
-    }else{
+        cin>>this->content;
+    }
+    if(this->content == ""){
         cout<<"\nNo se ingresó ningun contenido para editar."<<endl;
         return;
     }
-    int limite = content.length();
+    int limite = this->content.length();
     int numeroBloques = limite / 64;
     if (numeroBloques * 64 < limite) ++numeroBloques;
     string contenido[numeroBloques];
@@ -191,7 +206,7 @@ void obedit::exec(){
             if(cont == limite){
                 break;
             }
-            contenido[i] += content[cont];
+            contenido[i] += this->content[cont];
             cont +=1;
         }
     }
@@ -214,8 +229,50 @@ void obedit::exec(){
         }
     }else if(cont > numeroBloques){
         //CASO DONDE EL NUEVO CONTEIDO OCUPA MENOS BLOQUES QUE EL ANTERIOR
+        for(int i = 0; i < numeroBloques; i++){
+            if(inodo_actual.block[i] != -1 && i < 12){
+                Structs::BAR archivo;
+                strcpy(archivo.content, contenido[i].c_str());
+                this->saveBAR(archivo, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BAR)));
+            }else{/*INDIRECTOS*/}
+        }
+        for(int i = numeroBloques; i < cont; i++){
+            FILE * file = NULL;
+            file = fopen(path_particion.c_str(), "rb+");
+            fseek(file, (sb.bm_block_start + inodo_actual.block[i]), SEEK_SET);
+            fwrite("0", 1, 1, file);
+            fclose(file);
+            inodo_actual.block[i] = -1;
+            this->saveInodo(inodo_actual, path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
+        }
     }else{
         //CASO DONDE EL NUEVO CONTEIDO OCUPA MAS BLOQUES QUE EL ANTERIOR
+        for(int i = 0; i < numeroBloques; i++){
+            if(inodo_actual.block[i] != -1 && i < 12){
+                Structs::BAR archivo;
+                strcpy(archivo.content, contenido[i].c_str());
+                this->saveBAR(archivo, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BAR)));
+            }else{/*INDIRECTOS*/}
+        }
+        cout<<cont<<endl;
+        cout<<numeroBloques<<endl;
+        for(int i = (cont); i < numeroBloques; i++){
+            if(i < 12){
+                sb = this->getSB(path_particion, start_particion);
+                inodo_actual.block[i] = sb.first_blo;
+                this->saveInodo(inodo_actual, path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
+                Structs::BAR archivo;
+                strcpy(archivo.content, contenido[i].c_str());
+                this->saveBAR(archivo, path_particion, (sb.block_start + sb.first_blo * sizeof(Structs::BAR)));
+                FILE * file = NULL;
+                file = fopen(path_particion.c_str(), "rb+");
+                fseek(file, (sb.bm_block_start + sb.first_blo), SEEK_SET);
+                fwrite("1", 1, 1, file);
+                fclose(file);
+                sb.first_blo = sb.first_blo + 1;
+                this->saveSB(sb, path_particion, start_particion);
+            }else{/*INDIRECTOS*/}
+        }
     }
     cout<<"\Archivo modificado correctamente"<<endl;
 }

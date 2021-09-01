@@ -250,8 +250,8 @@ PARREP: /*parametros para reporte*/
       | MENOS ID IGUAL IDMOUNT             { reporte->setID($4); }
       | MENOS NAME IGUAL CADENA            { reporte->setName($4); }
       | MENOS NAME IGUAL IDENTIFICADOR     { reporte->setName($4); }
-      | MENOS RUTA IGUAL CADENA            { reporte->setRuta($4); }
-      | MENOS RUTA IGUAL IDENTIFICADOR     { reporte->setRuta($4); }
+      | MENOS RUTAS IGUAL CADENA           { reporte->setRuta($4); }
+      | MENOS RUTAS IGUAL RUTA             { reporte->setRuta($4); }
       | MENOS ROOT IGUAL POSITIVO          { reporte->setRoot(atoi($4)); }
 ;
 
