@@ -101,6 +101,56 @@ void obedit::saveBAR(Structs::BAR bar, string path, int pos){
     fclose(file);
 }
 
+Structs::Journaling obedit::getJournaling(string path, int pos){
+    Structs::Journaling jng;
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fread(&jng, sizeof(Structs::Journaling), 1, file);
+    fclose(file);
+    return jng;
+}
+
+void obedit::saveJournaling(Structs::Journaling journaling, string path, int pos){
+    char charPath[path.size() + 1];
+    strcpy(charPath, path.c_str());
+    FILE *file = NULL;
+    file = fopen(charPath, "rb+");
+    fseek(file, pos, SEEK_SET);
+    fwrite(&journaling, sizeof(Structs::Journaling), 1, file);
+    fclose(file);
+}
+
+void obedit::addJournaling(string content, string path, string path_paticion, string operacion, char tipo, int start){
+    bool seguimos = true;
+    int next = start + sizeof(Structs::SB);
+    Structs::Journaling jng_tmp;
+    while(seguimos){
+        jng_tmp = getJournaling(path_paticion, next);
+        if(jng_tmp.next == -1){
+            seguimos = false;
+        }else{
+            next = jng_tmp.next;
+        }
+    }
+    jng_tmp.next = jng_tmp.start + sizeof(Structs::Journaling);
+    Structs::SB sb = this->getSB(path_paticion, start);
+    if(jng_tmp.next > (sb.bm_inode_start - sizeof(Structs::Journaling))){
+        cout<<"\nEspacio insuficiente para el journaling"<<endl;
+        return;
+    }
+    this->saveJournaling(jng_tmp, path_paticion, jng_tmp.start);
+    Structs::Journaling jng;
+    jng.date = time(0);
+    strcpy(jng.path, path.c_str());
+    strcpy(jng.operacion, operacion.c_str());
+    jng.tipo = tipo;
+    jng.next = -1;
+    jng.start = jng_tmp.next;
+    strcpy(jng.contenido, content.c_str());
+    this->saveJournaling(jng, path_paticion, jng.start);
+}
+
 list<string> obedit::separar_carpetas(string path) {
     if (path[0] == '/') {
         path = path.substr(1, path.length());
@@ -222,6 +272,8 @@ void obedit::exec(){
         //CASO DONDE EL NUEVO CONTEIDO OCUPA LA MISMA CANTIDAD DE BLOQUES QUE EL ANTERIOR
         for(int i = 0; i < 15; i++){
             if(inodo_actual.block[i] != -1 && i < 12){
+                inodo_actual.size = this->content.length();
+                this->saveInodo(inodo_actual, path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
                 Structs::BAR archivo;
                 strcpy(archivo.content, contenido[i].c_str());
                 this->saveBAR(archivo, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BAR)));
@@ -243,6 +295,7 @@ void obedit::exec(){
             fwrite("0", 1, 1, file);
             fclose(file);
             inodo_actual.block[i] = -1;
+            inodo_actual.size = this->content.length();
             this->saveInodo(inodo_actual, path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
         }
     }else{
@@ -254,12 +307,11 @@ void obedit::exec(){
                 this->saveBAR(archivo, path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BAR)));
             }else{/*INDIRECTOS*/}
         }
-        cout<<cont<<endl;
-        cout<<numeroBloques<<endl;
         for(int i = (cont); i < numeroBloques; i++){
             if(i < 12){
                 sb = this->getSB(path_particion, start_particion);
                 inodo_actual.block[i] = sb.first_blo;
+                inodo_actual.size = this->content.length();
                 this->saveInodo(inodo_actual, path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
                 Structs::BAR archivo;
                 strcpy(archivo.content, contenido[i].c_str());
@@ -273,6 +325,13 @@ void obedit::exec(){
                 this->saveSB(sb, path_particion, start_particion);
             }else{/*INDIRECTOS*/}
         }
+    }
+    if(sb.filesystem_type == 3){
+        string tmp;
+        for(int i = 0; i < 100; i++){
+            tmp += content[i];
+        }
+        this->addJournaling(tmp, this->path, path_particion, "edit", '1', start_particion);
     }
     cout<<"\Archivo modificado correctamente"<<endl;
 }

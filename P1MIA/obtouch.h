@@ -44,6 +44,13 @@ public:
 
     void saveBAR(Structs::BAR bar, string path, int pos);
 
+    Structs::Journaling getJournaling(string path, int pos);
+
+    void saveJournaling(Structs::Journaling journaling, string path, int pos);
+
+    void addJournaling(string content, string path, string path_paticion, string operacion, char tipo, int start);
+
+
     list<string> separar_carpetas(string path);
 
     void exec();

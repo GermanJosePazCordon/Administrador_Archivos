@@ -103,6 +103,57 @@ void obmkdir::saveBAR(Structs::BAR bar, string path, int pos){
     fclose(file);
 }
 
+Structs::Journaling obmkdir::getJournaling(string path, int pos){
+    Structs::Journaling jng;
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fread(&jng, sizeof(Structs::Journaling), 1, file);
+    fclose(file);
+    return jng;
+}
+
+void obmkdir::saveJournaling(Structs::Journaling journaling, string path, int pos){
+    char charPath[path.size() + 1];
+    strcpy(charPath, path.c_str());
+    FILE *file = NULL;
+    file = fopen(charPath, "rb+");
+    fseek(file, pos, SEEK_SET);
+    fwrite(&journaling, sizeof(Structs::Journaling), 1, file);
+    fclose(file);
+}
+
+void obmkdir::addJournaling(string content, string path, string path_paticion, string operacion, char tipo, int start){
+    bool seguimos = true;
+    int next = start + sizeof(Structs::SB);
+    Structs::Journaling jng_tmp;
+    while(seguimos){
+        jng_tmp = this->getJournaling(path_paticion, next);
+        if(jng_tmp.next == -1){
+            seguimos = false;
+        }else{
+            next = jng_tmp.next;
+        }
+    }
+    jng_tmp.next = jng_tmp.start + sizeof(Structs::Journaling);
+    Structs::SB sb = this->getSB(path_paticion, start);
+    if(jng_tmp.next > (sb.bm_inode_start - sizeof(Structs::Journaling))){
+        cout<<"\nEspacio insuficiente para el journaling"<<endl;
+        return;
+    }
+    this->saveJournaling(jng_tmp, path_paticion, jng_tmp.start);
+    Structs::Journaling jng;
+    jng.date = time(0);
+    strcpy(jng.path, path.c_str());
+    strcpy(jng.operacion, operacion.c_str());
+    jng.tipo = tipo;
+    jng.next = -1;
+    jng.start = jng_tmp.next;
+    strcpy(jng.contenido, content.c_str());
+
+    this->saveJournaling(jng, path_paticion, jng.start);
+}
+
 list<string> obmkdir::separar_carpetas(string path) {
     if (path[0] == '/') {
         path = path.substr(1, path.length());
@@ -192,7 +243,6 @@ void obmkdir::exec(){
             todas_creadas = false; //SE ACTUALIZO ESTA VARIBLE YA QUE AL EXISTIR UNA CARPETA SIN CREARSE NO PUEDE ESTAR CREADO EL ARCHIVO
             //LA CARPETA NO EXITE, SE DEBE VALIDAR SI EL PARAMETRO R ESTA ACTIVO PARA SABER SI CREAR O NO LA CARPETA
             if(this->p){
-                //SE DEBE CREAR LA CARPETA, SI ES EXT3 SE DEBE ACTUALIZAR EL JOURNALING
                 //BUSCAR DONDE CREARLA, EL PRIMER ESPACIO LIBRE SIRVE
                 bool carpeta_creada = false;
                 for(int i = 0; i < 15; i++){
@@ -312,6 +362,10 @@ void obmkdir::exec(){
                 bool carpeta_creada = false;
                 for(int i = 0; i < 15; i++){
                     if(carpeta_creada){
+                        //SE DEBE CREAR LA CARPETA, SI ES EXT3 SE DEBE ACTUALIZAR EL JOURNALING
+                        if(sb.filesystem_type == 3){
+                            this->addJournaling("--", this->path, path_particion, "mkdir", '0', start_particion);
+                        }
                         break;
                     }
                     //PRIMERO REVISAMOS EN LOS BLOQUES ACTIVOS SI HAY ESPACIO PARA LA CARPETA, EN CASO CONTRARIO LA CREAMOS EN EL PRIMER BLOQUE INACTIVO
@@ -331,13 +385,6 @@ void obmkdir::exec(){
                                 this->crearCarpeta(sb, inodoPadre, inodoAbuelo, path_particion, start_particion);
                                 carpeta_creada = true;
                                 sb = this->getSB(path_particion, start_particion);
-                                /*cout<<"\ncarpeta : "<<*it<<" se creo en : "<<endl;
-                                cout<<"\ninodo : "<<inodoAbuelo<<endl;
-                                cout<<"\ninodo.block["<<i<<"] : "<<inodo_actual.block[i]<<endl;
-                                for(int x = 0; x < 4; x++){
-                                    cout<<"\nbloque.content["<<x<<"].name : "<<bc_actual.content[x].name<<endl;
-                                    cout<<"\nbloque.content["<<x<<"].inodo : "<<bc_actual.content[x].inodo<<endl;
-                                }*/
                                 break;
                             }
                         }
@@ -379,7 +426,6 @@ void obmkdir::exec(){
                 }
         }
     }
-
 }
 
 void obmkdir::crearCarpeta(Structs::SB sb, int inodoPadre, int inodoAbuelo, string path, int start_particion){

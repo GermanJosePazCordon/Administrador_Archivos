@@ -118,6 +118,56 @@ void obtouch::saveBAR(Structs::BAR bar, string path, int pos){
     fclose(file);
 }
 
+Structs::Journaling obtouch::getJournaling(string path, int pos){
+    Structs::Journaling jng;
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fread(&jng, sizeof(Structs::Journaling), 1, file);
+    fclose(file);
+    return jng;
+}
+
+void obtouch::saveJournaling(Structs::Journaling journaling, string path, int pos){
+    char charPath[path.size() + 1];
+    strcpy(charPath, path.c_str());
+    FILE *file = NULL;
+    file = fopen(charPath, "rb+");
+    fseek(file, pos, SEEK_SET);
+    fwrite(&journaling, sizeof(Structs::Journaling), 1, file);
+    fclose(file);
+}
+
+void obtouch::addJournaling(string content, string path, string path_paticion, string operacion, char tipo, int start){
+    bool seguimos = true;
+    int next = start + sizeof(Structs::SB);
+    Structs::Journaling jng_tmp;
+    while(seguimos){
+        jng_tmp = this->getJournaling(path_paticion, next);
+        if(jng_tmp.next == -1){
+            seguimos = false;
+        }else{
+            next = jng_tmp.next;
+        }
+    }
+    jng_tmp.next = jng_tmp.start + sizeof(Structs::Journaling);
+    Structs::SB sb = this->getSB(path_paticion, start);
+    if(jng_tmp.next > (sb.bm_inode_start - sizeof(Structs::Journaling))){
+        cout<<"\nEspacio insuficiente para el journaling"<<endl;
+        return;
+    }
+    this->saveJournaling(jng_tmp, path_paticion, jng_tmp.start);
+    Structs::Journaling jng;
+    jng.date = time(0);
+    strcpy(jng.path, path.c_str());
+    strcpy(jng.operacion, operacion.c_str());
+    jng.tipo = tipo;
+    jng.next = -1;
+    jng.start = jng_tmp.next;
+    strcpy(jng.contenido, content.c_str());
+    this->saveJournaling(jng, path_paticion, jng.start);
+}
+
 list<string> obtouch::separar_carpetas(string path) {
     if (path[0] == '/') {
         path = path.substr(1, path.length());
@@ -204,13 +254,8 @@ void obtouch::exec(){
         if(!carpeta_existente){
             todas_creadas = false; //SE ACTUALIZO ESTA VARIBLE YA QUE AL EXISTIR UNA CARPETA SIN CREARSE NO PUEDE ESTAR CREADO EL ARCHIVO
             //LA CARPETA NO EXITE, SE DEBE VALIDAR SI EL PARAMETRO R ESTA ACTIVO PARA SABER SI CREAR O NO LA CARPETA
+
             if(this->r){
-                //SE DEBE CREAR LA CARPETA, SI ES EXT3 SE DEBE ACTUALIZAR EL JOURNALING
-                /*cout<<"\ntype : "<<type_particion<<endl;
-                if(sb.filesystem_type == 3){
-                    string name = *it;
-                    this->addJournaling("-", name, path_particion, "mkdir", '0', start_particion);
-                }*/
                 //BUSCAR DONDE CREARLA, EL PRIMER ESPACIO LIBRE SIRVE
                 bool carpeta_creada = false;
                 for(int i = 0; i < 15; i++){
@@ -321,6 +366,13 @@ void obtouch::exec(){
         sb = this->getSB(path_particion, start_particion);
         for(int i = 0; i < 15; i++){
             if(bloque_creado){
+                if(sb.filesystem_type == 3){
+                    string tmp;
+                    for(int i = 0; i < 100; i++){
+                        tmp += content[i];
+                    }
+                    this->addJournaling(tmp, this->path, path_particion, "touch", '1', start_particion);
+                }
                 return;
             }
             //VERIFICAMOS EN LOS BLOQUES DEL INODO
@@ -362,6 +414,13 @@ void obtouch::exec(){
         //YA QUE TODAS LAS CARPETAS ESTABAN CREADAS DESDE UN INICIO SE TIENE QUE VALIDAR QUE EL ARCHIVO NO ESTE CREADO
         for(int i = 0; i < 15; i++){
             if(bloque_creado){
+                if(sb.filesystem_type == 3){
+                    string tmp;
+                    for(int i = 0; i < 100; i++){
+                        tmp += content[i];
+                    }
+                    this->addJournaling(tmp, this->path, path_particion, "touch", '1', start_particion);
+                }
                 return;
             }
             //VERIFICAMOS EN LOS BLOQUES DEL INODO
@@ -401,14 +460,12 @@ void obtouch::exec(){
             }else{
                 //VALIDAMOS SI EL BLOQUE INACTIVO ES DIRECTO
                 if(i < 12){
-                    //CREAMOS LA CARPETA EN EL BLOQUE INACTIVO
                     inodo_actual.block[i] = sb.first_blo;
                     //GUARDANDO EL INODO
                     this->saveInodo(inodo_actual, path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
                     inodoAbuelo = inodoPadre;
                     inodoPadre = sb.firts_ino;
                     this->crearInodoArchivo(sb, content, path_particion, start_particion, sb.firts_ino);
-
                 }else{
                     //INDIRECTOS
                 }

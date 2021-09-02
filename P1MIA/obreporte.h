@@ -40,6 +40,8 @@ public:
 
     Structs::BAR getBAR(string path, int pos);
 
+    Structs::Journaling getJournaling(string path, int pos);
+
     list<string> separar_carpetas(string path);
 
     bool validarName();
@@ -71,6 +73,8 @@ public:
     string graphBMInode(string path, int start);
 
     string graphBMBlock(string path, int start);
+
+    string graphJournaling(string path, int start);
 
     void generarDot(string content);
 

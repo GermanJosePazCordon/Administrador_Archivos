@@ -61,7 +61,7 @@ public:
             int free_inodes_count; //Contiene el número de inodos libres
             time_t mtime; //Última fecha en el que el sistema fue montado
             time_t umtime; //Última fecha en que el sistema fue desmontado
-            int mnt_count; //Indica cuantas veces se ha montado el sistema
+            int mnt_count = 1; //Indica cuantas veces se ha montado el sistema
             int magic; //Valor que identifica al sistema de archivos, tendrá el valor 0xEF53
             int inode_size; //Tamaño del inodo
             int block_size; //Tamaño del bloque
@@ -109,8 +109,8 @@ public:
             char path[40] = "";
             char contenido[100] = ""; // Validar cuando espacio necesitan.
             time_t date;
-            int size = 0;
-            int number = 2;
+            int next = -1;
+            int start;
         }Journaling; //typedef
 };
 #endif // STRUCTS_H

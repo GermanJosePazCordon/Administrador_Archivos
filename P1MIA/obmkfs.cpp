@@ -48,15 +48,16 @@ void obmkfs::saveJournaling(Structs::Journaling journaling, string path, int pos
     fclose(file);
 }
 
-void obmkfs::addJournaling(string content, string nombre, string path, string operacion, char tipo, int pos){
+void obmkfs::addJournaling(string content, string path, string path_particion, string operacion, char tipo, int next, int pos){
     Structs::Journaling jng;
-    strcpy(jng.contenido, content.c_str());
     jng.date = time(0);
-    strcpy(jng.path, nombre.c_str());
-    jng.size = 0;
+    strcpy(jng.path, path.c_str());
     strcpy(jng.operacion, operacion.c_str());
     jng.tipo = tipo;
-    saveJournaling(jng, path, pos);
+    jng.next = next;
+    jng.start = pos;
+    strcpy(jng.contenido, content.c_str());
+    saveJournaling(jng, path_particion, pos);
 }
 
 void obmkfs::exec(){
@@ -169,12 +170,8 @@ void obmkfs::exec(){
         fclose(file);
     }
     //CREANDO LA CARPETA ROOT
-    Structs::Journaling journaling;
     Structs::TI inodo;
     Structs::BC carpeta;
-    if(this->fs == "3fs"){
-        addJournaling("-", "/", discoMontado.path, "mkdir", '0', (particion.start + sizeof(Structs::SB)));
-    }
     //CREANDO EL NUEVO INODO CARPETA
     inodo.type = '0';
     inodo.uid = 1;
@@ -210,7 +207,7 @@ void obmkfs::exec(){
     fclose(file);
     //CREANDO EL ARCHIVO INICIAL
     if(this->fs == "3fs"){
-        addJournaling("1,G,root\n1,U,root,root,123\n", "uset.txt", discoMontado.path, "touch", '1', (particion.start + sizeof(Structs::SB) + sizeof(Structs::Journaling)));
+        addJournaling("1,G,root\n1,U,root,root,123\n", "/user.txt", discoMontado.path, "mkfs", '1', -1, (particion.start + sizeof(Structs::SB)));
     }
     //INODO ARCHIVO
     inodo.type = '1';

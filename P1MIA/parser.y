@@ -44,6 +44,9 @@ obrm * rm;
 #include "obedit.h"
 obedit * edit;
 
+#include "obexec.h"
+obexec * exec;
+
 using namespace std;
 extern int yylineno; //linea actual donde se encuentra el parser (analisis lexico) lo maneja BISON
 extern int columna; //columna actual donde se encuentra el parser (analisis lexico) lo maneja BISON
@@ -82,6 +85,8 @@ char TEXT[256];
 %token<TEXT> REN;
 %token<TEXT> RM;
 %token<TEXT> EDIT;
+%token<TEXT> EXEC;
+%token<TEXT> PAUSE;
 
 //PARAMETROS
 %token<TEXT> SIZE;
@@ -101,7 +106,6 @@ char TEXT[256];
 %token<TEXT> letF;
 %token<TEXT> letU;
 %token<TEXT> letR;
-%token<TEXT> letP;
 
 //SIMBOLOS
 %token<TEXT> IGUAL;
@@ -144,115 +148,117 @@ INSTRUCCION:
     | REN    { ren = new obren();           /*objeto ren*/} COMANDOREN     { ren->exec();       /*ejecutar ren*/}
     | RM     { rm = new obrm();              /*objeto rm*/} COMANDORM      { rm->exec();         /*ejecutar rm*/}
     | EDIT   { edit = new obedit();        /*objeto edit*/} COMANDOEDIT    { edit->exec();     /*ejecutar edit*/}
+    | EXEC   { exec = new obexec();        /*objeto exec*/} COMANDOEXEC    { exec->exec();     /*ejecutar exec*/}
+    | PAUSE  { cin.get(); }
 ;
 
 COMANDOMKDISK:
-        COMANDOMKDISK PARMKDISK     {  }
-      | PARMKDISK                   {  }
+      COMANDOMKDISK PARMKDISK     {  }
+    | PARMKDISK                   {  }
 ;
 
 PARMKDISK: /*parametros para mkdisk*/
-        MENOS SIZE IGUAL POSITIVO       { mdisk->setSize(atoi($4)); }
-      | MENOS PATH IGUAL RUTA           { mdisk->setPath($4); }
-      | MENOS PATH IGUAL CADENA         { mdisk->setPath($4); }
-      | MENOS letU IGUAL LETRA          { mdisk->setUnit($4); }
-      | MENOS letF IGUAL IDENTIFICADOR  { mdisk->setFit($4); }
+      MENOS SIZE IGUAL POSITIVO       { mdisk->setSize(atoi($4)); }
+    | MENOS PATH IGUAL RUTA           { mdisk->setPath($4); }
+    | MENOS PATH IGUAL CADENA         { mdisk->setPath($4); }
+    | MENOS letU IGUAL LETRA          { mdisk->setUnit($4); }
+    | MENOS letF IGUAL IDENTIFICADOR  { mdisk->setFit($4); }
 ;
 
 COMANDORMDISK: /*parametros para rmdisk*/
-        MENOS PATH IGUAL RUTA           { rmdisk->setPath($4); }
-      | MENOS PATH IGUAL CADENA         { rmdisk->setPath($4); }
+      MENOS PATH IGUAL RUTA           { rmdisk->setPath($4); }
+    | MENOS PATH IGUAL CADENA         { rmdisk->setPath($4); }
 ;
 
 COMANDOFDISK:
-        COMANDOFDISK PARFDISK     {  }
-      | PARFDISK                  {  }
+      COMANDOFDISK PARFDISK     {  }
+    | PARFDISK                  {  }
 ;
 
 PARFDISK: /*parametros para fdisk*/
-        MENOS SIZE IGUAL POSITIVO          { fdisk->setSize(atoi($4)); }
-      | MENOS PATH IGUAL RUTA              { fdisk->setPath($4); }
-      | MENOS PATH IGUAL CADENA            { fdisk->setPath($4); }
-      | MENOS letU IGUAL LETRA             { fdisk->setUnit($4); }
-      | MENOS letF IGUAL IDENTIFICADOR     { fdisk->setFit($4); }
-      | MENOS TYPE IGUAL LETRA             { fdisk->setType($4); }
-      | MENOS NAME IGUAL CADENA            { fdisk->setName($4); }
-      | MENOS NAME IGUAL IDENTIFICADOR     { fdisk->setName($4); }
-      | MENOS ADD  IGUAL POSITIVO          { fdisk->setAdd(atoi($4)); }
-      | MENOS ADD  IGUAL MENOS POSITIVO    { fdisk->setAdd(atoi($5) * -1); }
-      | MENOS DELETE IGUAL IDENTIFICADOR   { fdisk->setDelet($4); }
+      MENOS SIZE IGUAL POSITIVO          { fdisk->setSize(atoi($4)); }
+    | MENOS PATH IGUAL RUTA              { fdisk->setPath($4); }
+    | MENOS PATH IGUAL CADENA            { fdisk->setPath($4); }
+    | MENOS letU IGUAL LETRA             { fdisk->setUnit($4); }
+    | MENOS letF IGUAL IDENTIFICADOR     { fdisk->setFit($4); }
+    | MENOS TYPE IGUAL LETRA             { fdisk->setType($4); }
+    | MENOS NAME IGUAL CADENA            { fdisk->setName($4); }
+    | MENOS NAME IGUAL IDENTIFICADOR     { fdisk->setName($4); }
+    | MENOS ADD  IGUAL POSITIVO          { fdisk->setAdd(atoi($4)); }
+    | MENOS ADD  IGUAL MENOS POSITIVO    { fdisk->setAdd(atoi($5) * -1); }
+    | MENOS DELETE IGUAL IDENTIFICADOR   { fdisk->setDelet($4); }
 ;
 
 COMANDOMOUNT:
-        COMANDOMOUNT PARMOUNT     {  }
-      | PARMOUNT                  {  }
+      COMANDOMOUNT PARMOUNT     {  }
+    | PARMOUNT                  {  }
 ;
 
 PARMOUNT:  /*parametros para mount*/
-        MENOS PATH IGUAL RUTA              { mount->setPath($4); }
-      | MENOS PATH IGUAL CADENA            { mount->setPath($4); }
-      | MENOS NAME IGUAL CADENA            { mount->setName($4); }
-      | MENOS NAME IGUAL IDENTIFICADOR     { mount->setName($4); }
+      MENOS PATH IGUAL RUTA              { mount->setPath($4); }
+    | MENOS PATH IGUAL CADENA            { mount->setPath($4); }
+    | MENOS NAME IGUAL CADENA            { mount->setName($4); }
+    | MENOS NAME IGUAL IDENTIFICADOR     { mount->setName($4); }
 ;
 
 COMANDOUMOUNT: /*parametros para umount*/
-        MENOS ID IGUAL IDMOUNT   { umount->setID($4); }
-      | MENOS ID IGUAL CADENA    { umount->setID($4); }
+      MENOS ID IGUAL IDMOUNT   { umount->setID($4); }
+    | MENOS ID IGUAL CADENA    { umount->setID($4); }
 ;
 
 COMANDOMKFS:
-        COMANDOMKFS PARMKFS  {  }
-      | PARMKFS              {  }
+      COMANDOMKFS PARMKFS  {  }
+    | PARMKFS              {  }
 ;
 
 PARMKFS:
-        MENOS ID IGUAL IDMOUNT          { mkfs->setID($4); }
-      | MENOS ID IGUAL CADENA           { mkfs->setID($4); }
-      | MENOS TYPE IGUAL IDENTIFICADOR  { mkfs->setType($4); }
-      | MENOS FS IGUAL IDFS             { mkfs->setFS($4); }
+      MENOS ID IGUAL IDMOUNT          { mkfs->setID($4); }
+    | MENOS ID IGUAL CADENA           { mkfs->setID($4); }
+    | MENOS TYPE IGUAL IDENTIFICADOR  { mkfs->setType($4); }
+    | MENOS FS IGUAL IDFS             { mkfs->setFS($4); }
 ;
 
 COMANDOTOUCH:
-        COMANDOTOUCH PARTOUCH   {  }
-      | PARTOUCH                {  }
+      COMANDOTOUCH PARTOUCH   {  }
+    | PARTOUCH                {  }
 ;
 
 PARTOUCH: /*parametros para touch*/
-        MENOS PATH IGUAL RUTA              { touch->setPath($4); }
-      | MENOS PATH IGUAL CADENA            { touch->setPath($4); }
-      | MENOS CONT IGUAL RUTA              { touch->setCont($4); }
-      | MENOS CONT IGUAL CADENA            { touch->setCont($4); }
-      | MENOS SIZE IGUAL POSITIVO          { touch->setSize(atoi($4)); }
-      | MENOS letR                         { touch->setR(); }
-      | MENOS STDIN                        { touch->setStdin(); }
+      MENOS PATH IGUAL RUTA              { touch->setPath($4); }
+    | MENOS PATH IGUAL CADENA            { touch->setPath($4); }
+    | MENOS CONT IGUAL RUTA              { touch->setCont($4); }
+    | MENOS CONT IGUAL CADENA            { touch->setCont($4); }
+    | MENOS SIZE IGUAL POSITIVO          { touch->setSize(atoi($4)); }
+    | MENOS letR                         { touch->setR(); }
+    | MENOS STDIN                        { touch->setStdin(); }
 ;
 
 COMANDOMKDIR:
-        COMANDOMKDIR PARMKDIR   {  }
-      | PARMKDIR                {  }
+      COMANDOMKDIR PARMKDIR   {  }
+    | PARMKDIR                {  }
 ;
 
 PARMKDIR: /*parametros para mkdir*/
-        MENOS PATH IGUAL RUTA              { mkdir->setPath($4); }
-      | MENOS PATH IGUAL CADENA            { mkdir->setPath($4); }
-      | MENOS LETRA                        { mkdir->setP($2); }
+      MENOS PATH IGUAL RUTA              { mkdir->setPath($4); }
+    | MENOS PATH IGUAL CADENA            { mkdir->setPath($4); }
+    | MENOS LETRA                        { mkdir->setP($2); }
 ;
 
 COMANDOREPORTE:
-        COMANDOREPORTE PARREP   {  }
-      | PARREP                  {  }
+      COMANDOREPORTE PARREP   {  }
+    | PARREP                  {  }
 ;
 
 PARREP: /*parametros para reporte*/
-        MENOS PATH IGUAL RUTA              { reporte->setPath($4); }
-      | MENOS PATH IGUAL CADENA            { reporte->setPath($4); }
-      | MENOS ID IGUAL CADENA              { reporte->setID($4); }
-      | MENOS ID IGUAL IDMOUNT             { reporte->setID($4); }
-      | MENOS NAME IGUAL CADENA            { reporte->setName($4); }
-      | MENOS NAME IGUAL IDENTIFICADOR     { reporte->setName($4); }
-      | MENOS RUTAS IGUAL CADENA           { reporte->setRuta($4); }
-      | MENOS RUTAS IGUAL RUTA             { reporte->setRuta($4); }
-      | MENOS ROOT IGUAL POSITIVO          { reporte->setRoot(atoi($4)); }
+      MENOS PATH IGUAL RUTA              { reporte->setPath($4); }
+    | MENOS PATH IGUAL CADENA            { reporte->setPath($4); }
+    | MENOS ID IGUAL CADENA              { reporte->setID($4); }
+    | MENOS ID IGUAL IDMOUNT             { reporte->setID($4); }
+    | MENOS NAME IGUAL CADENA            { reporte->setName($4); }
+    | MENOS NAME IGUAL IDENTIFICADOR     { reporte->setName($4); }
+    | MENOS RUTAS IGUAL CADENA           { reporte->setRuta($4); }
+    | MENOS RUTAS IGUAL RUTA             { reporte->setRuta($4); }
+    | MENOS ROOT IGUAL POSITIVO          { reporte->setRoot(atoi($4)); }
 ;
 
 COMANDOCAT:
@@ -261,42 +267,46 @@ COMANDOCAT:
 ;
 
 PARCAT: /*parametros para cat*/
-        MENOS IDENTIFICADOR IGUAL RUTA     { cat->addFile($2, $4); }
-      | MENOS IDENTIFICADOR IGUAL CADENA   { cat->addFile($2, $4); }
+      MENOS IDENTIFICADOR IGUAL RUTA     { cat->addFile($2, $4); }
+    | MENOS IDENTIFICADOR IGUAL CADENA   { cat->addFile($2, $4); }
 ;
 
 COMANDOREN:
-        COMANDOREN PARREN     {  }
-      | PARREN                {  }
+      COMANDOREN PARREN     {  }
+    | PARREN                {  }
 ;
 
 PARREN: /*parametros para ren*/
-        MENOS PATH IGUAL RUTA            { ren->setPath($4); }
-      | MENOS PATH IGUAL CADENA          { ren->setPath($4); }
-      | MENOS NAME IGUAL IDENTIFICADOR   { ren->setName($4); }
-      | MENOS NAME IGUAL CADENA          { ren->setName($4); }
+      MENOS PATH IGUAL RUTA            { ren->setPath($4); }
+    | MENOS PATH IGUAL CADENA          { ren->setPath($4); }
+    | MENOS NAME IGUAL IDENTIFICADOR   { ren->setName($4); }
+    | MENOS NAME IGUAL CADENA          { ren->setName($4); }
 ;
 
 COMANDORM:
-        COMANDORM PARRM     {  }
-      | PARRM               {  }
+      COMANDORM PARRM     {  }
+    | PARRM               {  }
 ;
 
 PARRM: /*parametros para rm*/
-        MENOS PATH IGUAL RUTA       { rm->setPath($4); }
-      | MENOS PATH IGUAL CADENA     { rm->setPath($4); }
+      MENOS PATH IGUAL RUTA       { rm->setPath($4); }
+    | MENOS PATH IGUAL CADENA     { rm->setPath($4); }
 ;
 
 COMANDOEDIT:
-        COMANDOEDIT PAREDIT   {  }
-      | PAREDIT               {  }
+      COMANDOEDIT PAREDIT   {  }
+    | PAREDIT               {  }
 ;
 
 PAREDIT: /*parametros para edit*/
-        MENOS PATH IGUAL RUTA       { edit->setPath($4); }
-      | MENOS PATH IGUAL CADENA     { edit->setPath($4); }
-      | MENOS CONT IGUAL RUTA       { edit->setCont($4); }
-      | MENOS CONT IGUAL CADENA     { edit->setCont($4); }
-      | MENOS STDIN                 { edit->setStdin(); }
+      MENOS PATH IGUAL RUTA       { edit->setPath($4); }
+    | MENOS PATH IGUAL CADENA     { edit->setPath($4); }
+    | MENOS CONT IGUAL RUTA       { edit->setCont($4); }
+    | MENOS CONT IGUAL CADENA     { edit->setCont($4); }
+    | MENOS STDIN                 { edit->setStdin(); }
 ;
 
+COMANDOEXEC: /*parametros para exec*/
+      MENOS PATH IGUAL RUTA       { exec->setPath($4); }
+    | MENOS PATH IGUAL CADENA     { exec->setPath($4); }
+;

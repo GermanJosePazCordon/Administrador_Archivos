@@ -158,6 +158,16 @@ Structs::BAR obreporte::getBAR(string path, int pos){
     return bar;
 }
 
+Structs::Journaling obreporte::getJournaling(string path, int pos){
+    Structs::Journaling jng;
+    FILE * file = NULL;
+    file = fopen(path.c_str(), "rb+");
+    fseek(file, pos, SEEK_SET);
+    fread(&jng, sizeof(Structs::Journaling), 1, file);
+    fclose(file);
+    return jng;
+}
+
 list<string> obreporte::separar_carpetas(string path) {
     if (path[0] == '/') {
         path = path.substr(1, path.length());
@@ -260,6 +270,17 @@ void obreporte::exec(){
         string content;
         content +="\ndigraph rep{";
         content += this->graphBMBlock(path_partition, particion.start);
+        content +="\n}";
+        this->generarDot(content);
+    }else if(this->name == "journaling"){
+        Structs::SB sb = this->getSB(path_partition, particion.start);
+        if(sb.filesystem_type == 2){
+            cout<<"\nSistema de archivos EXT2"<<endl;
+            return;
+        }
+        string content;
+        content +="\ndigraph rep{";
+        content += this->graphJournaling(path_partition, particion.start);
         content +="\n}";
         this->generarDot(content);
     }else if(this->name == "file"){
@@ -597,7 +618,7 @@ string obreporte::graphUsedBlockBC(int bloque, string path, int start){
     grafico += "\nbloque" + to_string(bloque) + "[shape=none, margin=0, label=<";
     grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
     grafico += "\n<TR><TD colspan='2'>Bloque Carpeta " + to_string(bloque) + "</TD></TR>";
-    grafico += "\n<TR><TD>NAME</TD><TD>INODO</TD></TR>";
+    grafico += "\n<TR><TD>Name</TD><TD>Inodo</TD></TR>";
     string tmp;
     for(int i = 0; i < 4; i++){
         tmp = bc.content[i].name;
@@ -801,13 +822,12 @@ string obreporte::graphSB(string path, int start){
     char date[16];
     strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&sb.mtime));
     tmp = date;
+    sb.umtime = time(0);
     grafico += "\n<TR><TD>s_mtime</TD><TD>" + tmp + "</TD></TR>";
     strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&sb.umtime));
     tmp = date;
     grafico += "\n<TR><TD>s_umtime</TD><TD>" + tmp + "</TD></TR>";
-    strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&sb.mtime));
-    tmp = date;
-    grafico += "\n<TR><TD>s_mnt_count</TD><TD>" + tmp + "</TD></TR>";
+    grafico += "\n<TR><TD>s_mnt_count</TD><TD>" + to_string(sb.mnt_count) + "</TD></TR>";
     grafico += "\n<TR><TD>s_magic</TD><TD>0xEF53</TD></TR>";
     grafico += "\n<TR><TD>s_inode_size</TD><TD>" + to_string(sb.inode_size) + "</TD></TR>";
     grafico += "\n<TR><TD>s_block_size</TD><TD>" + to_string(sb.block_size) + "</TD></TR>";
@@ -821,13 +841,47 @@ string obreporte::graphSB(string path, int start){
     return grafico;
 }
 
+string obreporte::graphJournaling(string path, int start){
+    string grafico;
+    grafico += "\njng[shape=none, margin=0, label=<";
+    grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
+    grafico += "\n<TR><TD colspan='6'>Journaling</TD></TR>";
+    grafico += "\n<TR><TD>#</TD><TD>Operacion</TD><TD>Tipo</TD><TD>Ruta</TD><TD>Fecha</TD><TD>Contenido</TD></TR>";
+    bool seguimos = true;
+    int next = start + sizeof(Structs::SB);
+    int i = 1;
+    while(seguimos){
+        Structs::Journaling jng = getJournaling(path, next);
+        string op = jng.operacion;
+        string tipo;
+        if(jng.tipo == '0'){
+            tipo = "0";
+        }else{
+            tipo = "1";
+        }
+        string name = jng.path;
+        string cont = jng.contenido;
+        char date[16];
+        strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&jng.date));
+        string dates = date;
+        grafico += "\n<TR><TD>" + to_string(i) + "</TD><TD>" + op + "</TD><TD>" + tipo + "</TD><TD>" + name + "</TD><TD>" + dates + "</TD><TD>" + cont + "</TD></TR>";
+        i += 1;
+        if(jng.next == -1){
+            seguimos = false;
+        }else{
+            next = jng.next;
+        }
+    }
+    grafico += "</TABLE>>];";
+    return grafico;
+}
+
 string obreporte::graphFile(string path, string ruta, int start, int inodoPadre, string file_name){
     string grafico;
     grafico += "\nfile[shape=none, margin=0, label=<";
     grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
     grafico += "\n<TR><TD>Nombre : </TD><TD>" + file_name + "</TD></TR>";
     grafico += "\n<TR><TD>Ruta : </TD><TD>" + ruta + "</TD></TR>";
-    grafico += "\n<TR><TD>Bloque</TD><TD>Contenido</TD></TR>";
     Structs::SB sb = this->getSB(path, start);
     Structs::TI inodo_actual = this->getInodo(path, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
     Structs::BAR archivo;

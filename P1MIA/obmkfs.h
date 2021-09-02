@@ -27,7 +27,7 @@ public:
 
     Structs::Journaling getJournaling(string path, int pos);
 
-    void addJournaling(string content, string nombre, string path, string operacion, char tipo, int pos);
+    void addJournaling(string content, string path, string path_particion, string operacion, char tipo, int next, int pos);
 
     void exec();
 
