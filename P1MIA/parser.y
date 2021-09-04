@@ -47,6 +47,18 @@ obedit * edit;
 #include "obexec.h"
 obexec * exec;
 
+#include "obmv.h"
+obmv * mv;
+
+#include "obcp.h"
+obcp * cp;
+
+#include "obfind.h"
+obfind * finds;
+
+#include "oblogin.h"
+oblogin * login;
+
 using namespace std;
 extern int yylineno; //linea actual donde se encuentra el parser (analisis lexico) lo maneja BISON
 extern int columna; //columna actual donde se encuentra el parser (analisis lexico) lo maneja BISON
@@ -87,6 +99,10 @@ char TEXT[256];
 %token<TEXT> EDIT;
 %token<TEXT> EXEC;
 %token<TEXT> PAUSE;
+%token<TEXT> MV;
+%token<TEXT> CP;
+%token<TEXT> FIND;
+%token<TEXT> LOGIN;
 
 //PARAMETROS
 %token<TEXT> SIZE;
@@ -101,6 +117,9 @@ char TEXT[256];
 %token<TEXT> STDIN;
 %token<TEXT> RUTAS;
 %token<TEXT> ROOT;
+%token<TEXT> DEST;
+%token<TEXT> USER;
+%token<TEXT> PWD;
 
 //LETRAS
 %token<TEXT> letF;
@@ -149,7 +168,11 @@ INSTRUCCION:
     | RM     { rm = new obrm();              /*objeto rm*/} COMANDORM      { rm->exec();         /*ejecutar rm*/}
     | EDIT   { edit = new obedit();        /*objeto edit*/} COMANDOEDIT    { edit->exec();     /*ejecutar edit*/}
     | EXEC   { exec = new obexec();        /*objeto exec*/} COMANDOEXEC    { exec->exec();     /*ejecutar exec*/}
-    | PAUSE  { cin.get(); }
+    | MV     { mv = new obmv();              /*objeto mv*/} COMANDOMV      { mv->exec();         /*ejecutar mv*/}
+    | CP     { cp = new obcp();              /*objeto cp*/} COMANDOCP      { cp->exec();         /*ejecutar cp*/}
+    | FIND   { finds = new obfind();       /*objeto find*/} COMANDOFIND    { finds->exec();    /*ejecutar find*/}
+    | LOGIN  { login = new oblogin();     /*objeto login*/} COMANDOLOGIN   { login->exec();   /*ejecutar login*/}
+    | PAUSE  { system("read -p 'Presss <ENTER> to continue...' var"); }
 ;
 
 COMANDOMKDISK:
@@ -310,3 +333,56 @@ COMANDOEXEC: /*parametros para exec*/
       MENOS PATH IGUAL RUTA       { exec->setPath($4); }
     | MENOS PATH IGUAL CADENA     { exec->setPath($4); }
 ;
+
+COMANDOMV:
+      COMANDOMV PARMV     {  }
+    | PARMV               {  }
+;
+
+PARMV: /*parametros para mv*/
+      MENOS PATH IGUAL RUTA       { mv->setPath($4); }
+    | MENOS PATH IGUAL CADENA     { mv->setPath($4); }
+    | MENOS DEST IGUAL RUTA       { mv->setDest($4); }
+    | MENOS DEST IGUAL CADENA     { mv->setDest($4); }
+;
+
+COMANDOCP:
+      COMANDOCP PARCP     {  }
+    | PARCP               {  }
+;
+
+PARCP: /*parametros para cp*/
+      MENOS PATH IGUAL RUTA       { cp->setPath($4); }
+    | MENOS PATH IGUAL CADENA     { cp->setPath($4); }
+    | MENOS DEST IGUAL RUTA       { cp->setDest($4); }
+    | MENOS DEST IGUAL CADENA     { cp->setDest($4); }
+;
+
+COMANDOFIND:
+      COMANDOFIND PARFIND     {  }
+    | PARFIND                 {  }
+;
+
+PARFIND: /*parametros para find*/
+      MENOS PATH IGUAL RUTA                { finds->setPath($4); }
+    | MENOS PATH IGUAL CADENA              { finds->setPath($4); }
+    | MENOS NAME IGUAL IDENTIFICADOR       { finds->setName($4); }
+    | MENOS NAME IGUAL CADENA              { finds->setName($4); }
+;
+
+COMANDOLOGIN:
+      COMANDOLOGIN PARLOGIN     {  }
+    | PARLOGIN                  {  }
+;
+
+PARLOGIN: /*parametros para login*/
+      MENOS USER IGUAL IDENTIFICADOR   { login->setUser($4); }
+    | MENOS USER IGUAL CADENA          { login->setUser($4); }
+    | MENOS USER IGUAL ROOT            { login->setUser($4); }
+    | MENOS PWD IGUAL IDENTIFICADOR    { login->setPwd($4); }
+    | MENOS PWD IGUAL POSITIVO         { login->setPwd($4); }
+    | MENOS PWD IGUAL CADENA           { login->setPwd($4); }
+    | MENOS ID IGUAL IDMOUNT           { login->setID($4); }
+    | MENOS ID IGUAL CADENA            { login->setID($4); }
+;
+

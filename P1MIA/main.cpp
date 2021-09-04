@@ -13,6 +13,7 @@ extern int linea; // Linea del token
 extern int columna; // Columna de los tokens
 extern int yylineno;
 Structs::Discos discos[99];
+Structs::Login log;
 int main(int argc, char *argv[])
 {
 

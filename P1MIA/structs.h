@@ -112,5 +112,13 @@ public:
             int next = -1;
             int start;
         }Journaling; //typedef
+
+    typedef struct
+        {
+            string user;
+            string pwd;
+            string id;
+            char status = 'i'; //i inhabilitado, h habilitado
+        }Login; //typedef
 };
 #endif // STRUCTS_H

@@ -11,6 +11,7 @@ obrm::obrm()
 }
 
 extern Structs::Discos discos[99];
+extern Structs::Login log;
 
 //--------------------------SETERS-----------------------------------
 
@@ -146,7 +147,11 @@ void obrm::exec(){
         return;
     }
     //OBTENEMOS LA PARTICION A UTILIZAR
-    string id_particion = "341A";
+    if(log.status == 'i'){
+        cout<<"\nNo existe usuario logueado"<<endl;
+        return;
+    }
+    string id_particion = log.id;
     string path_particion = "";
     char type_particion = 'x';
     int start_particion;

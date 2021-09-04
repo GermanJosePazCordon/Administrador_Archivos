@@ -64,30 +64,37 @@ extern int yydebug;
     EDIT = 270,
     EXEC = 271,
     PAUSE = 272,
-    SIZE = 273,
-    PATH = 274,
-    TYPE = 275,
-    NAME = 276,
-    ADD = 277,
-    DELETE = 278,
-    ID = 279,
-    FS = 280,
-    CONT = 281,
-    STDIN = 282,
-    RUTAS = 283,
-    ROOT = 284,
-    letF = 285,
-    letU = 286,
-    letR = 287,
-    IGUAL = 288,
-    MENOS = 289,
-    POSITIVO = 290,
-    RUTA = 291,
-    LETRA = 292,
-    CADENA = 293,
-    IDENTIFICADOR = 294,
-    IDMOUNT = 295,
-    IDFS = 296
+    MV = 273,
+    CP = 274,
+    FIND = 275,
+    LOGIN = 276,
+    SIZE = 277,
+    PATH = 278,
+    TYPE = 279,
+    NAME = 280,
+    ADD = 281,
+    DELETE = 282,
+    ID = 283,
+    FS = 284,
+    CONT = 285,
+    STDIN = 286,
+    RUTAS = 287,
+    ROOT = 288,
+    DEST = 289,
+    USER = 290,
+    PWD = 291,
+    letF = 292,
+    letU = 293,
+    letR = 294,
+    IGUAL = 295,
+    MENOS = 296,
+    POSITIVO = 297,
+    RUTA = 298,
+    LETRA = 299,
+    CADENA = 300,
+    IDENTIFICADOR = 301,
+    IDMOUNT = 302,
+    IDFS = 303
   };
 #endif
 
@@ -95,7 +102,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 65 "parser.y"
+#line 77 "parser.y"
 
 //se especifican los tipo de valores para los no terminales y lo terminales
 //char TEXT [256];
@@ -103,7 +110,7 @@ union YYSTYPE
 char TEXT[256];
 
 
-#line 107 "parser.h"
+#line 114 "parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

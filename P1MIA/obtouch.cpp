@@ -13,6 +13,7 @@ obtouch::obtouch()
 }
 
 extern Structs::Discos discos[99];
+extern Structs::Login log;
 
 //--------------------------SETERS-----------------------------------
 
@@ -197,7 +198,11 @@ void obtouch::exec(){
         return;
     }
     //OBTENEMOS LA PARTICION A UTILIZAR
-    string id_particion = "341A";
+    if(log.status == 'i'){
+        cout<<"\nNo existe usuario logueado"<<endl;
+        return;
+    }
+    string id_particion = log.id;
     string path_particion = "";
     char type_particion = 'x';
     int start_particion;
@@ -223,6 +228,9 @@ void obtouch::exec(){
     int inodoAbuelo = 0; //INODOS QUE REVISAMOS ANTERIORMENTE /home/carpeta/caeesa home
     //int journaling = start_particion + sizeof(Structs::SB) + sizeof(Structs::Journaling) * 2;
     bool todas_creadas = true; //VALIDA SI TODAS LAS CARPETAS DE LA RUTA ESTAN CREADAS, ESTO PARA DETERMINAR SI EL ARCHIVO PUEDE ESTAR CREADO O NO
+    if(lista_carpetas.empty()){
+        todas_creadas = false;
+    }
     for(it = lista_carpetas.begin(); it != lista_carpetas.end(); it++){
         //OBTENEMOS EL SUPER BLOQUE
         sb = this->getSB(path_particion, start_particion);
@@ -360,10 +368,12 @@ void obtouch::exec(){
     }
     bool bloque_creado = false;
     if(!todas_creadas){
+        cout<<"1"<<endl;
         //YA QUE EXISTIA ALMENOS UNA CARPETA SIN CREAR ES POR SEGURO QUE EL ARCHIVO NO ESTA CREADO
         //AHORA DEBEMOS BUSCAR UN ESPACIO LIBRE PARA CREAR EL INODO CARPETA
-        inodo_actual = this->getInodo(path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
         sb = this->getSB(path_particion, start_particion);
+        inodo_actual = this->getInodo(path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
+
         for(int i = 0; i < 15; i++){
             if(bloque_creado){
                 if(sb.filesystem_type == 3){
@@ -376,7 +386,9 @@ void obtouch::exec(){
                 return;
             }
             //VERIFICAMOS EN LOS BLOQUES DEL INODO
+            cout<<i<<" : "<<inodo_actual.block[i]<<endl;
             if(inodo_actual.block[i] != -1){
+                cout<<"2"<<endl;
                 bc_actual = this->getBC(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                 for(int j = 0; j < 4; j++){
                     //VERIFICAMOS SI EL NODO ACTUAL ESTA INACTIVO, DE ESTARLO CREAMOS LA CARPETA
@@ -393,14 +405,29 @@ void obtouch::exec(){
             }else{
                 //VALIDAMOS SI EL BLOQUE INACTIVO ES DIRECTO
                 if(i < 12){
+                    cout<<"3"<<endl;
                     //CREAMOS LA CARPETA EN EL BLOQUE INACTIVO
                     inodo_actual.block[i] = sb.first_blo;
                     //GUARDANDO EL INODO
                     this->saveInodo(inodo_actual, path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
                     inodoAbuelo = inodoPadre;
                     inodoPadre = sb.firts_ino;
+                    //CREANDO CARPETA
+                    Structs::BC carpeta;
+                    //PADRE
+                    carpeta.content[0].inodo = inodoPadre;
+                    strcpy(carpeta.content[0].name, file_name.c_str());
+                    //GUARDANDO LA CARPETA
+                    this->saveBC(carpeta, path_particion, (sb.block_start + sb.first_blo * sizeof(Structs::BC)));
+                    FILE * file = NULL;
+                    file = fopen(path_particion.c_str(), "rb+");
+                    fseek(file, (sb.bm_block_start + sb.first_blo), SEEK_SET);
+                    fwrite("1", 1, 1, file);
+                    fclose(file);
+                    sb.free_blocks_count = sb.blocks_count - 1;
+                    sb.first_blo = sb.first_blo + 1;
+                    this->saveSB(sb, path_particion, start_particion);
                     this->crearInodoArchivo(sb, content, path_particion, start_particion, sb.firts_ino);
-
                 }else{
                     //INDIRECTOS
                 }
@@ -465,6 +492,21 @@ void obtouch::exec(){
                     this->saveInodo(inodo_actual, path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
                     inodoAbuelo = inodoPadre;
                     inodoPadre = sb.firts_ino;
+                    //CREANDO CARPETA
+                    Structs::BC carpeta;
+                    //PADRE
+                    carpeta.content[0].inodo = inodoPadre;
+                    strcpy(carpeta.content[0].name, file_name.c_str());
+                    //GUARDANDO LA CARPETA
+                    this->saveBC(carpeta, path_particion, (sb.block_start + sb.first_blo * sizeof(Structs::BC)));
+                    FILE * file = NULL;
+                    file = fopen(path_particion.c_str(), "rb+");
+                    fseek(file, (sb.bm_block_start + sb.first_blo), SEEK_SET);
+                    fwrite("1", 1, 1, file);
+                    fclose(file);
+                    sb.free_blocks_count = sb.blocks_count - 1;
+                    sb.first_blo = sb.first_blo + 1;
+                    this->saveSB(sb, path_particion, start_particion);
                     this->crearInodoArchivo(sb, content, path_particion, start_particion, sb.firts_ino);
                 }else{
                     //INDIRECTOS

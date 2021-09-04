@@ -17,13 +17,13 @@
 %option noyywrap
 %option nounput
 
-
+comentario [#]([^\n])*
 numero [0-9]+
 letra [a-zA-ZÑñáéíóúÁÉÍÓÚ]
 positivo ([1-9]|0?)+
 
 
-identificador {letra}({letra}|{numero}|"_"|".")*
+identificador ({letra}|"*"|"?")({letra}|{numero}|"_"|"."|"*"|"?")*
 idmount {numero}{numero}{numero}({letra})+
 idfs {numero}("fs"|"FS"|"Fs"|"fS")
 cadena [\"][^\"\n]*[\"\n]
@@ -49,6 +49,11 @@ ruta (([/]([a-zA-Z]|[0-9]|"_"|".")+)+)
 "EDIT" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return EDIT;}
 "EXEC" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return EXEC;}
 "PAUSE" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return PAUSE;}
+"MV" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return MV;}
+"CP" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return CP;}
+"FIND" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return FIND;}
+"LOGIN" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return LOGIN;}
+"LOGOUT" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return LOGOUT;}
 
 "SIZE" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return SIZE;}
 "PATH" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return PATH;}
@@ -62,6 +67,9 @@ ruta (([/]([a-zA-Z]|[0-9]|"_"|".")+)+)
 "STDIN" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return STDIN;}
 "RUTA" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return RUTAS;}
 "ROOT" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return ROOT;}
+"DEST" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return DEST;}
+"USER" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return USER;}
+"PWD" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return PWD;}
 
 "U" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return letU;}
 "F" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return letF;}

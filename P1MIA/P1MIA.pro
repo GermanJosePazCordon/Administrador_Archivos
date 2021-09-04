@@ -27,7 +27,12 @@ SOURCES += main.cpp \
     obren.cpp \
     obrm.cpp \
     obedit.cpp \
-    obexec.cpp
+    obexec.cpp \
+    obmv.cpp \
+    obcp.cpp \
+    obfind.cpp \
+    oblogin.cpp \
+    oblogout.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -62,7 +67,12 @@ HEADERS += \
     obren.h \
     obrm.h \
     obedit.h \
-    obexec.h
+    obexec.h \
+    obmv.h \
+    obcp.h \
+    obfind.h \
+    oblogin.h \
+    oblogout.h
 
 SUBDIRS += \
     P1MIA.pro

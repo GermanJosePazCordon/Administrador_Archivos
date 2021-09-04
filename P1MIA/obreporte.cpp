@@ -667,7 +667,7 @@ string obreporte::graphBMInode(string path, int start){
         fseek(file, i, SEEK_SET);
         fread(&carac, 1, 1, file);
         fclose(file);
-        if(cont > 32){
+        if(cont > 31){
             grafico += "\n<TR><TD>" + tmp + "</TD></TR>";
             cont = 0;
             tmp = "";
@@ -694,7 +694,7 @@ string obreporte::graphBMBlock(string path, int start){
         fseek(file, i, SEEK_SET);
         fread(&carac, 1, 1, file);
         fclose(file);
-        if(cont > 32){
+        if(cont > 31){
             grafico += "\n<TR><TD>" + tmp + "</TD></TR>";
             cont = 0;
             tmp = "";
@@ -846,10 +846,9 @@ string obreporte::graphJournaling(string path, int start){
     grafico += "\njng[shape=none, margin=0, label=<";
     grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
     grafico += "\n<TR><TD colspan='6'>Journaling</TD></TR>";
-    grafico += "\n<TR><TD>#</TD><TD>Operacion</TD><TD>Tipo</TD><TD>Ruta</TD><TD>Fecha</TD><TD>Contenido</TD></TR>";
+    grafico += "\n<TR><TD>Operacion</TD><TD>Tipo</TD><TD>Ruta</TD><TD>Fecha</TD><TD>Contenido</TD></TR>";
     bool seguimos = true;
     int next = start + sizeof(Structs::SB);
-    int i = 1;
     while(seguimos){
         Structs::Journaling jng = getJournaling(path, next);
         string op = jng.operacion;
@@ -864,8 +863,7 @@ string obreporte::graphJournaling(string path, int start){
         char date[16];
         strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&jng.date));
         string dates = date;
-        grafico += "\n<TR><TD>" + to_string(i) + "</TD><TD>" + op + "</TD><TD>" + tipo + "</TD><TD>" + name + "</TD><TD>" + dates + "</TD><TD>" + cont + "</TD></TR>";
-        i += 1;
+        grafico += "\n<TR><TD>" + op + "</TD><TD>" + tipo + "</TD><TD>" + name + "</TD><TD>" + dates + "</TD><TD>" + cont + "</TD></TR>";
         if(jng.next == -1){
             seguimos = false;
         }else{
