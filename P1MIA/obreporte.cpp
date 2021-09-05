@@ -647,6 +647,9 @@ string obreporte::graphUsedBlockBAR(int bloque, string path, int start){
     grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
     grafico += "\n<TR><TD>Bloque Archivo " + to_string(bloque) +"</TD></TR>";
     string tmp = archivo.content;
+    if(tmp.length() > 64){
+        tmp = tmp.substr(0, 64);
+    }
     grafico += "\n<TR><TD>" + tmp + "</TD></TR>";
     grafico +="\n</TABLE>>];";
     return grafico;
@@ -803,6 +806,9 @@ string obreporte::graphBAR(int bloque, string path, int start){
     grafico += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
     grafico += "\n<TR><TD color='yellow'>BLOCK</TD><TD color='yellow'>" + to_string(bloque) + "</TD></TR>";
     string tmp = archivo.content;
+    if(tmp.length() > 64){
+        tmp = tmp.substr(0, 64);
+    }
     grafico += "\n<TR><TD>" + tmp +  "</TD><TD></TD></TR>";
     grafico +="\n</TABLE>>];";
     return grafico;
@@ -858,8 +864,10 @@ string obreporte::graphJournaling(string path, int start){
         }else{
             tipo = "1";
         }
-        string name = jng.path;
         string cont = jng.contenido;
+        if(cont.length() > 64){
+            cont = cont.substr(0, 64);
+        }
         char date[16];
         strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&jng.date));
         string dates = date;
@@ -888,7 +896,9 @@ string obreporte::graphFile(string path, string ruta, int start, int inodoPadre,
         if(inodo_actual.block[i] != -1 && i < 12){
             archivo = this->getBAR(path, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BAR)));
             string tmp = archivo.content;
-            tmp = tmp.substr(0, tmp.length() - 1);
+            if(tmp.length() > 64){
+                tmp = tmp.substr(0, 64);
+            }
             content += tmp;
         }else{/*INDIRECTOS*/}
     }

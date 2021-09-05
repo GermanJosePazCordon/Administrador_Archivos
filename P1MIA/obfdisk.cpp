@@ -277,39 +277,6 @@ void obfdisk::exec(){
             return;
         }
         init();
-        /*int inicio = 0;
-        for(int i = 0; i < 4; i++){
-            cout<<"---------------- PARTICION "<<i<<" ----------------"<<endl;
-            cout<<"name : "<<this->mbr.particiones[i].name<<endl;
-            cout<<"size : "<<this->mbr.particiones[i].size<<endl;
-            cout<<"type : "<<this->mbr.particiones[i].type<<endl;
-            cout<<"fit : "<<this->mbr.particiones[i].fit<<endl;
-            cout<<"start : "<<this->mbr.particiones[i].start<<endl;
-            cout<<"status : "<<this->mbr.particiones[i].status<<endl;
-            if(this->mbr.particiones[i].type == 'e'){
-                inicio = this->mbr.particiones[i].start;
-            }
-        }
-        if(inicio != 0){
-            bool seguimos = true;
-            int i = 0;
-            while(seguimos){
-                Structs::EBR ebr = getEBR(this->path, inicio);
-                cout<<"---------------- EBR "<<i<<" ----------------"<<endl;
-                cout<<"name : "<<ebr.name<<endl;
-                cout<<"size : "<<ebr.size<<endl;
-                cout<<"fit : "<<ebr.fit<<endl;
-                cout<<"start : "<<ebr.start<<endl;
-                cout<<"status : "<<ebr.status<<endl;
-                cout<<"next : "<<ebr.next<<endl;
-                if(ebr.next == -1){
-                    seguimos = false;
-                }else{
-                    inicio = ebr.next;
-                }
-                i +=1;
-            }
-        }*/
     }
 }
 

@@ -166,6 +166,9 @@ void obcat::getInodoArchivo(string path, string path_particion, int start_partic
         if(inodo_actual.block[i] != -1 && i < 12){
             Structs::BAR archivo = this->getBAR(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BAR)));
             string tmp = archivo.content;
+            if(tmp.length() > 64){
+                tmp = tmp.substr(0, 64);
+            }
             content += tmp;
         }else{
             //VAILDAR PA INDIRECTOS

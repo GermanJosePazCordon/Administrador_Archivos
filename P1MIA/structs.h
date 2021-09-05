@@ -115,6 +115,8 @@ public:
 
     typedef struct
         {
+            int guid;
+            int uid;
             string user;
             string pwd;
             string id;

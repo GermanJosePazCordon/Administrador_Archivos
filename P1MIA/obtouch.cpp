@@ -234,8 +234,6 @@ void obtouch::exec(){
     for(it = lista_carpetas.begin(); it != lista_carpetas.end(); it++){
         //OBTENEMOS EL SUPER BLOQUE
         sb = this->getSB(path_particion, start_particion);
-        //cout<<"\nCARPETA DE LA LISTA : "<<*it<<endl;
-        //cout<<"\ninodo : "<<inodoPadre<<endl;
         inodo_actual = this->getInodo(path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
         //PRIMER PASADA, SE VERIFICA SI LA CARPETA ACTUAL ESTA CREADA O NO, NO SE REALIZA NINGUNA ACCION MAS QUE VALIDACIONES
         bool carpeta_existente = false;
@@ -246,16 +244,13 @@ void obtouch::exec(){
                 bc_actual = this->getBC(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                 for(int j = 0; j < 4; j++){
                     string name = *it;
-                    //cout<<bc_actual.content[j].name<<" apunta a "<<bc_actual.content[j].inodo<<endl;
                     if(strcmp(bc_actual.content[j].name, name.c_str()) == 0){
-                        //cout<<"\ncarpeta encontrada : "<<*it<<endl;
                         //CARPETA ENCONTRADA EN LA POSICION i DEL PRIMER BLOQUE DEL NODOD
                         carpeta_existente = true;
                         inodoAbuelo = inodoPadre;
                         inodoPadre = bc_actual.content[j].inodo;
                     }
                 }
-                //cout<<"\n---------------------------------"<<endl;
             }
         }
         //SEGUNDA PASADA, SE EJECUTAN ACCIONES DEPENDIENDO DE LAS VALIDACIONES HECHAS EN LA PRIMER PASADA
@@ -286,7 +281,6 @@ void obtouch::exec(){
                                 inodoPadre = sb.firts_ino;
                                 this->crearCarpeta(sb, inodoPadre, inodoAbuelo, path_particion, start_particion);
                                 carpeta_creada = true;
-                                //cout<<"\ncarpeta : "<<*it<<" esta en "<<inodo_actual.block[i]<<endl;
                                 break;
                             }
                         }
@@ -368,7 +362,6 @@ void obtouch::exec(){
     }
     bool bloque_creado = false;
     if(!todas_creadas){
-        cout<<"1"<<endl;
         //YA QUE EXISTIA ALMENOS UNA CARPETA SIN CREAR ES POR SEGURO QUE EL ARCHIVO NO ESTA CREADO
         //AHORA DEBEMOS BUSCAR UN ESPACIO LIBRE PARA CREAR EL INODO CARPETA
         sb = this->getSB(path_particion, start_particion);
@@ -386,9 +379,7 @@ void obtouch::exec(){
                 return;
             }
             //VERIFICAMOS EN LOS BLOQUES DEL INODO
-            cout<<i<<" : "<<inodo_actual.block[i]<<endl;
             if(inodo_actual.block[i] != -1){
-                cout<<"2"<<endl;
                 bc_actual = this->getBC(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                 for(int j = 0; j < 4; j++){
                     //VERIFICAMOS SI EL NODO ACTUAL ESTA INACTIVO, DE ESTARLO CREAMOS LA CARPETA
@@ -522,8 +513,8 @@ void obtouch::crearCarpeta(Structs::SB sb, int inodoPadre, int inodoAbuelo, stri
     //CREANDO EL NUEVO INODO CARPETA
     Structs::TI inodo;
     inodo.type = '0';
-    inodo.uid = 1;
-    inodo.gid = 1;
+    inodo.uid = log.uid;
+    inodo.gid = log.guid;
     inodo.size = 0;
     inodo.block[0] = sb.first_blo;
     inodo.atime = time(0);
@@ -566,8 +557,8 @@ void obtouch::crearInodoArchivo(Structs::SB sb, string content, string path, int
     Structs::TI inodo; /*this->getInodo(path, (sb.inode_start + inodoPadre * sizeof(Structs::TI)))*/;
     //CREANDO INODO ARCHIVO
     inodo.type = '1';
-    inodo.uid = 1;
-    inodo.gid = 1;
+    inodo.uid = log.uid;
+    inodo.gid = log.guid;
     inodo.size = content.length();
     inodo.block[0] = sb.first_blo;
     inodo.atime = time(0);

@@ -1,5 +1,5 @@
-#ifndef OBLOGIN_H
-#define OBLOGIN_H
+#ifndef OBMKUSR_H
+#define OBMKUSR_H
 #include <QString>
 #include "string"
 #include "structs.h"
@@ -7,20 +7,20 @@
 
 using namespace std;
 
-class oblogin
+class obmkusr
 {
 public:
-    oblogin();
+    obmkusr();
 
-    string user = "";
+    string usr = "";
     string pwd = "";
-    string id = "";
+    string grp = "";
 
-    void setUser(string user);
+    void setUsr(string usr);
 
     void setPwd(string pwd);
 
-    void setID(string id);
+    void setGrp(string grp);
 
     Structs::SB getSB(string path, int pos);
 
@@ -38,4 +38,4 @@ public:
 
 };
 
-#endif // OBLOGIN_H
+#endif // OBMKUSR_H

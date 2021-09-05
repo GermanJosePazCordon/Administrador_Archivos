@@ -59,6 +59,21 @@ obfind * finds;
 #include "oblogin.h"
 oblogin * login;
 
+#include "oblogout.h"
+oblogout * logout;
+
+#include "obmkgrp.h"
+obmkgrp * mkgrp;
+
+#include "obrmgrp.h"
+obrmgrp * rmgrp;
+
+#include "obmkusr.h"
+obmkusr * mkusr;
+
+#include "obrmusr.h"
+obrmusr * rmusr;
+
 using namespace std;
 extern int yylineno; //linea actual donde se encuentra el parser (analisis lexico) lo maneja BISON
 extern int columna; //columna actual donde se encuentra el parser (analisis lexico) lo maneja BISON
@@ -103,6 +118,11 @@ char TEXT[256];
 %token<TEXT> CP;
 %token<TEXT> FIND;
 %token<TEXT> LOGIN;
+%token<TEXT> LOGOUT;
+%token<TEXT> MKGRP;
+%token<TEXT> RMGRP;
+%token<TEXT> MKUSR;
+%token<TEXT> RMUSR;
 
 //PARAMETROS
 %token<TEXT> SIZE;
@@ -120,6 +140,8 @@ char TEXT[256];
 %token<TEXT> DEST;
 %token<TEXT> USER;
 %token<TEXT> PWD;
+%token<TEXT> USR;
+%token<TEXT> GRP;
 
 //LETRAS
 %token<TEXT> letF;
@@ -172,6 +194,11 @@ INSTRUCCION:
     | CP     { cp = new obcp();              /*objeto cp*/} COMANDOCP      { cp->exec();         /*ejecutar cp*/}
     | FIND   { finds = new obfind();       /*objeto find*/} COMANDOFIND    { finds->exec();    /*ejecutar find*/}
     | LOGIN  { login = new oblogin();     /*objeto login*/} COMANDOLOGIN   { login->exec();   /*ejecutar login*/}
+    | LOGOUT { logout = new oblogout();                                      logout->exec();    /*objeto login*/}
+    | MKGRP  { mkgrp = new obmkgrp();     /*objeto mkgrp*/} COMANDOMKGRP   { mkgrp->exec();   /*ejecutar mkgrp*/}
+    | RMGRP  { rmgrp = new obrmgrp();     /*objeto rmgrp*/} COMANDORMGRP   { rmgrp->exec();   /*ejecutar rmgrp*/}
+    | MKUSR  { mkusr = new obmkusr();     /*objeto mkusr*/} COMANDOMKUSR   { mkusr->exec();   /*ejecutar mkusr*/}
+    | RMUSR  { rmusr = new obrmusr();     /*objeto rmusr*/} COMANDORMUSR   { rmusr->exec();   /*ejecutar rmusr*/}
     | PAUSE  { system("read -p 'Presss <ENTER> to continue...' var"); }
 ;
 
@@ -384,5 +411,54 @@ PARLOGIN: /*parametros para login*/
     | MENOS PWD IGUAL CADENA           { login->setPwd($4); }
     | MENOS ID IGUAL IDMOUNT           { login->setID($4); }
     | MENOS ID IGUAL CADENA            { login->setID($4); }
+;
+
+COMANDOMKGRP:
+      COMANDOMKGRP PARMKGRP     {  }
+    | PARMKGRP                  {  }
+;
+
+PARMKGRP: /*parametros para mkgrp*/
+      MENOS NAME IGUAL IDENTIFICADOR   { mkgrp->setName($4); }
+    | MENOS NAME IGUAL CADENA          { mkgrp->setName($4); }
+    | MENOS NAME IGUAL ROOT            { mkgrp->setName($4); }
+;
+
+COMANDORMGRP:
+      COMANDORMGRP PARRMGRP     {  }
+    | PARRMGRP                  {  }
+;
+
+PARRMGRP: /*parametros para rmgrp*/
+      MENOS NAME IGUAL IDENTIFICADOR   { rmgrp->setName($4); }
+    | MENOS NAME IGUAL CADENA          { rmgrp->setName($4); }
+    | MENOS NAME IGUAL ROOT            { rmgrp->setName($4); }
+;
+
+COMANDOMKUSR:
+      COMANDOMKUSR PARMKUSR     {  }
+    | PARMKUSR                  {  }
+;
+
+PARMKUSR: /*parametros para mkusr*/
+      MENOS USR IGUAL IDENTIFICADOR   { mkusr->setUsr($4); }
+    | MENOS USR IGUAL CADENA          { mkusr->setUsr($4); }
+    | MENOS USR IGUAL ROOT            { mkusr->setUsr($4); }
+    | MENOS PWD IGUAL IDENTIFICADOR   { mkusr->setPwd($4); }
+    | MENOS PWD IGUAL CADENA          { mkusr->setPwd($4); }
+    | MENOS PWD IGUAL POSITIVO        { mkusr->setPwd($4); }
+    | MENOS GRP IGUAL CADENA          { mkusr->setGrp($4); }
+    | MENOS GRP IGUAL IDENTIFICADOR   { mkusr->setGrp($4); }
+;
+
+COMANDORMUSR:
+      COMANDORMUSR PARRMUSR     {  }
+    | PARRMUSR                  {  }
+;
+
+PARRMUSR: /*parametros para rmusr*/
+      MENOS USR IGUAL IDENTIFICADOR   { rmusr->setUsr($4); }
+    | MENOS USR IGUAL CADENA          { rmusr->setUsr($4); }
+    | MENOS USR IGUAL ROOT            { rmusr->setUsr($4); }
 ;
 

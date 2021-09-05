@@ -220,27 +220,22 @@ void obmkdir::exec(){
     for (it = lista_carpetas.begin(); it != lista_carpetas.end(); it++) {
         //OBTENEMOS EL SUPER BLOQUE
         sb = this->getSB(path_particion, start_particion);
-        //cout<<"\ninodo : "<<inodoPadre<<endl;
         inodo_actual = this->getInodo(path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
         //PRIMER PASADA, SE VERIFICA SI LA CARPETA ACTUAL ESTA CREADA O NO, NO SE REALIZA NINGUNA ACCION MAS QUE VALIDACIONES
         bool carpeta_existente = false;
         for(int i = 0; i < 15; i++){
             if(inodo_actual.block[i] != -1){
                 //POSICIONAMOS EL BLOQUE ACTUAL PARA PODER ACCEDER A SU CONTENIDO
-                //bc_actual = inodo_actual.block[i];
                 bc_actual = this->getBC(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                 for(int j = 0; j < 4; j++){
                     string name = *it;
-                    //cout<<bc_actual.content[j].name<<" apunta a "<<bc_actual.content[j].inodo<<endl;
                     if(strcmp(bc_actual.content[j].name, name.c_str()) == 0){
-                        cout<<"\ncarpeta encontrada : "<<*it<<endl;
                         //CARPETA ENCONTRADA EN LA POSICION i DEL PRIMER BLOQUE DEL NODOD
                         carpeta_existente = true;
                         inodoAbuelo = inodoPadre;
                         inodoPadre = bc_actual.content[j].inodo;
                     }
                 }
-                //cout<<"\n---------------------------------"<<endl;
             }
         }
         //SEGUNDA PASADA, SE EJECUTAN ACCIONES DEPENDIENDO DE LAS VALIDACIONES HECHAS EN LA PRIMER PASADA
@@ -335,7 +330,6 @@ void obmkdir::exec(){
     for (it = lista_carpetas.begin(); it != lista_carpetas.end(); it++) {
         //OBTENEMOS EL SUPER BLOQUE
         sb = this->getSB(path_particion, start_particion);
-        //cout<<"\ninodo : "<<inodoPadre<<endl;
         inodo_actual = this->getInodo(path_particion, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
         //PRIMER PASADA, SE VERIFICA SI LA CARPETA ACTUAL ESTA CREADA O NO, NO SE REALIZA NINGUNA ACCION MAS QUE VALIDACIONES
         bool carpeta_existente = false;
@@ -346,16 +340,13 @@ void obmkdir::exec(){
                 bc_actual = this->getBC(path_particion, (sb.block_start + inodo_actual.block[i] * sizeof(Structs::BC)));
                 for(int j = 0; j < 4; j++){
                     string name = *it;
-                    //cout<<bc_actual.content[j].name<<" apunta a "<<bc_actual.content[j].inodo<<endl;
                     if(strcmp(bc_actual.content[j].name, name.c_str()) == 0){
-                        cout<<"\ncarpeta encontrada : "<<*it<<endl;
                         //CARPETA ENCONTRADA EN LA POSICION i DEL PRIMER BLOQUE DEL NODOD
                         carpeta_existente = true;
                         inodoAbuelo = inodoPadre;
                         inodoPadre = bc_actual.content[j].inodo;
                     }
                 }
-                //cout<<"\n---------------------------------"<<endl;
             }
         }
         //SEGUNDA PASADA, SE EJECUTAN ACCIONES DEPENDIENDO DE LAS VALIDACIONES HECHAS EN LA PRIMER PASADA
@@ -437,8 +428,8 @@ void obmkdir::crearCarpeta(Structs::SB sb, int inodoPadre, int inodoAbuelo, stri
     //CREANDO EL NUEVO INODO CARPETA
     Structs::TI inodo;
     inodo.type = '0';
-    inodo.uid = 1;
-    inodo.gid = 1;
+    inodo.uid = log.uid;
+    inodo.gid = log.uid;
     inodo.size = 0;
     inodo.block[0] = sb.first_blo;
     inodo.atime = time(0);
