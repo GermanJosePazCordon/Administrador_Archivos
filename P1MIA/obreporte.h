@@ -44,6 +44,10 @@ public:
 
     list<string> separar_carpetas(string path);
 
+    list<string> separar_carpetas2(string path);
+
+    list<string> separar_comas(string path);
+
     bool validarName();
 
     string getExt();
@@ -54,7 +58,7 @@ public:
 
     string graphBAR(int bloque, string path, int start);
 
-    string graphSB(string path, int start);
+    string graphSB(string path, int start, bool nulo);
 
     string graphFile(string path, string ruta, int start, int inodoPadre, string file_name);
 
@@ -75,6 +79,12 @@ public:
     string graphBMBlock(string path, int start);
 
     string graphJournaling(string path, int start);
+
+    string graphLs(int root, string name, string path, int start);
+
+    string getOwner(int usr, string path, int start);
+
+    string getGrupo(int grp, string path, int start);
 
     void generarDot(string content);
 

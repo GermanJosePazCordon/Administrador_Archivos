@@ -58,6 +58,7 @@ ruta (([/]([a-zA-Z]|[0-9]|"_"|".")+)+)
 "RMGRP" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return RMGRP;}
 "MKUSR" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return MKUSR;}
 "RMUSR" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return RMUSR;}
+"CHGRP" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return CHGRP;}
 
 "SIZE" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return SIZE;}
 "PATH" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return PATH;}
@@ -76,6 +77,8 @@ ruta (([/]([a-zA-Z]|[0-9]|"_"|".")+)+)
 "PWD" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return PWD;}
 "USR" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return USR;}
 "GRP" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return GRP;}
+"LOSS" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return LOSS;}
+"RECOVERY" {columna=columna+ anterior;  anterior = strlen(yytext); strcpy(yylval.TEXT, yytext);return RECO;}
 
 "U" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return letU;}
 "F" {columna=columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return letF;}
@@ -96,7 +99,7 @@ ruta (([/]([a-zA-Z]|[0-9]|"_"|".")+)+)
 
 "\n" {linea++; columna=0; anterior=0;}
 [[:blank:]] { columna++; }
-
+{comentario} {}
 . {
 
 std::cout<<"Error Lexico: "<<linea<<"\n";

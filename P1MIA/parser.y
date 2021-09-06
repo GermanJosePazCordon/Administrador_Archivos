@@ -74,6 +74,15 @@ obmkusr * mkusr;
 #include "obrmusr.h"
 obrmusr * rmusr;
 
+#include "obchgrp.h"
+obchgrp * chgrp;
+
+#include "obloss.h"
+obloss * loss;
+
+#include "obrecovery.h"
+obrecovery * reco;
+
 using namespace std;
 extern int yylineno; //linea actual donde se encuentra el parser (analisis lexico) lo maneja BISON
 extern int columna; //columna actual donde se encuentra el parser (analisis lexico) lo maneja BISON
@@ -123,6 +132,9 @@ char TEXT[256];
 %token<TEXT> RMGRP;
 %token<TEXT> MKUSR;
 %token<TEXT> RMUSR;
+%token<TEXT> CHGRP;
+%token<TEXT> LOSS;
+%token<TEXT> RECO;
 
 //PARAMETROS
 %token<TEXT> SIZE;
@@ -199,6 +211,9 @@ INSTRUCCION:
     | RMGRP  { rmgrp = new obrmgrp();     /*objeto rmgrp*/} COMANDORMGRP   { rmgrp->exec();   /*ejecutar rmgrp*/}
     | MKUSR  { mkusr = new obmkusr();     /*objeto mkusr*/} COMANDOMKUSR   { mkusr->exec();   /*ejecutar mkusr*/}
     | RMUSR  { rmusr = new obrmusr();     /*objeto rmusr*/} COMANDORMUSR   { rmusr->exec();   /*ejecutar rmusr*/}
+    | CHGRP  { chgrp = new obchgrp();     /*objeto chgrp*/} COMANDOCHGRP   { chgrp->exec();   /*ejecutar chgrp*/}
+    | LOSS   { loss = new obloss();        /*objeto loss*/} COMANDOLOSS    { loss->exec();     /*ejecutar loss*/}
+    | RECO   { reco = new obrecovery();/*objeto recovery*/} COMANDORECO    { reco->exec(); /*ejecutar recovery*/}
     | PAUSE  { system("read -p 'Presss <ENTER> to continue...' var"); }
 ;
 
@@ -449,6 +464,7 @@ PARMKUSR: /*parametros para mkusr*/
     | MENOS PWD IGUAL POSITIVO        { mkusr->setPwd($4); }
     | MENOS GRP IGUAL CADENA          { mkusr->setGrp($4); }
     | MENOS GRP IGUAL IDENTIFICADOR   { mkusr->setGrp($4); }
+    | MENOS GRP IGUAL ROOT            { mkusr->setGrp($4); }
 ;
 
 COMANDORMUSR:
@@ -462,3 +478,36 @@ PARRMUSR: /*parametros para rmusr*/
     | MENOS USR IGUAL ROOT            { rmusr->setUsr($4); }
 ;
 
+COMANDOCHGRP:
+      COMANDOCHGRP PARCHGRP     {  }
+    | PARCHGRP                  {  }
+;
+
+PARCHGRP: /*parametros para chgrp*/
+      MENOS USR IGUAL IDENTIFICADOR   { chgrp->setUsr($4); }
+    | MENOS USR IGUAL CADENA          { chgrp->setUsr($4); }
+    | MENOS USR IGUAL ROOT            { chgrp->setUsr($4); }
+    | MENOS GRP IGUAL CADENA          { chgrp->setGrp($4); }
+    | MENOS GRP IGUAL IDENTIFICADOR   { chgrp->setGrp($4); }
+    | MENOS GRP IGUAL ROOT            { chgrp->setGrp($4); }
+;
+
+COMANDOLOSS:
+      COMANDOLOSS PARLOSS     {  }
+    | PARLOSS                 {  }
+;
+
+PARLOSS: /*parametros para loss*/
+      MENOS ID IGUAL IDMOUNT         { loss->setID($4); }
+    | MENOS ID IGUAL CADENA          { loss->setID($4); }
+;
+
+COMANDORECO:
+      COMANDORECO PARRECO     {  }
+    | PARRECO                 {  }
+;
+
+PARRECO: /*parametros para recovery*/
+      MENOS ID IGUAL IDMOUNT         { reco->setID($4); }
+    | MENOS ID IGUAL CADENA          { reco->setID($4); }
+;

@@ -54,23 +54,23 @@ public:
         } Discos;
 
     typedef struct{ //Super Bloque
-            int filesystem_type; //Numero del sistema de archivos utilizado
-            int inodes_count; //Guarda el número total de inodos
-            int blocks_count; //Guarda el número total de bloques
-            int free_blocks_count; //Contiene el número de bloques libres
-            int free_inodes_count; //Contiene el número de inodos libres
+            int filesystem_type = 2; //Numero del sistema de archivos utilizado
+            int inodes_count = 0; //Guarda el número total de inodos
+            int blocks_count = 0; //Guarda el número total de bloques
+            int free_blocks_count = 0; //Contiene el número de bloques libres
+            int free_inodes_count = 0; //Contiene el número de inodos libres
             time_t mtime; //Última fecha en el que el sistema fue montado
             time_t umtime; //Última fecha en que el sistema fue desmontado
             int mnt_count = 1; //Indica cuantas veces se ha montado el sistema
-            int magic; //Valor que identifica al sistema de archivos, tendrá el valor 0xEF53
-            int inode_size; //Tamaño del inodo
-            int block_size; //Tamaño del bloque
-            int firts_ino; //Primer inodo libre
-            int first_blo; //Primer bloque libre
-            int bm_inode_start; //Guardará el inicio del bitmap de inodos
-            int bm_block_start; //Guardará el inicio del bitmap de bloques
-            int inode_start; //Guardará el inicio de la tabla de inodos
-            int block_start; //Guardará el inicio de la tabla de bloques
+            int magic = 0; //Valor que identifica al sistema de archivos, tendrá el valor 0xEF53
+            int inode_size = 0; //Tamaño del inodo
+            int block_size = 0; //Tamaño del bloque
+            int firts_ino = 0; //Primer inodo libre
+            int first_blo = 0; //Primer bloque libre
+            int bm_inode_start = 0; //Guardará el inicio del bitmap de inodos
+            int bm_block_start = 0; //Guardará el inicio del bitmap de bloques
+            int inode_start = 0; //Guardará el inicio de la tabla de inodos
+            int block_start = 0; //Guardará el inicio de la tabla de bloques
         } SB;
 
     typedef struct{ //Tabla Inodos

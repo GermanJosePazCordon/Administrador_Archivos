@@ -1,4 +1,5 @@
-#include "oblogin.h"
+#include "obchgrp.h"
+#include "obedit.h"
 #include "iostream"
 #include "structs.h"
 #include "list"
@@ -6,7 +7,7 @@
 
 using namespace std;
 
-oblogin::oblogin()
+obchgrp::obchgrp()
 {
 
 }
@@ -16,34 +17,25 @@ extern Structs::Login log;
 
 //--------------------------SETERS-----------------------------------
 
-void oblogin::setUser(string user){
-    if(user[0] == '"'){
-        this->user = user.substr(1, user.size()-1);
-        this->user = this->user.substr(0, this->user.size()-1);
+void obchgrp::setUsr(string usr){
+    if(usr[0] == '"'){
+        this->usr = usr.substr(1, usr.size()-1);
+        this->usr = this->usr.substr(0, this->usr.size()-1);
     }else{
-        this->user = user;
+        this->usr = usr;
     }
 }
 
-void oblogin::setPwd(string pwd){
-    if(pwd[0] == '"'){
-        this->pwd = pwd.substr(1, pwd.size()-1);
-        this->pwd = this->pwd.substr(0, this->pwd.size()-1);
+void obchgrp::setGrp(string grp){
+    if(grp[0] == '"'){
+        this->grp = grp.substr(1, grp.size()-1);
+        this->grp = this->grp.substr(0, this->grp.size()-1);
     }else{
-        this->pwd = pwd;
+        this->grp = grp;
     }
 }
 
-void oblogin::setID(string id){
-    if(id[0] == '"'){
-        this->id = id.substr(1, id.size()-1);
-        this->id = this->id.substr(0, this->id.size()-1);
-    }else{
-        this->id = id;
-    }
-}
-
-Structs::SB oblogin::getSB(string path, int pos){
+Structs::SB obchgrp::getSB(string path, int pos){
     Structs::SB sb;
     FILE * file = NULL;
     file = fopen(path.c_str(), "rb+");
@@ -53,7 +45,7 @@ Structs::SB oblogin::getSB(string path, int pos){
     return sb;
 }
 
-Structs::TI oblogin::getInodo(string path, int pos){
+Structs::TI obchgrp::getInodo(string path, int pos){
     Structs::TI inodo_t;
     FILE * file = NULL;
     file = fopen(path.c_str(), "rb+");
@@ -63,7 +55,7 @@ Structs::TI oblogin::getInodo(string path, int pos){
     return inodo_t;
 }
 
-Structs::BC oblogin::getBC(string path, int pos){
+Structs::BC obchgrp::getBC(string path, int pos){
     Structs::BC bc;
     FILE * file = NULL;
     file = fopen(path.c_str(), "rb+");
@@ -73,17 +65,17 @@ Structs::BC oblogin::getBC(string path, int pos){
     return bc;
 }
 
-Structs::BAR oblogin::getBAR(string path, int pos){
+Structs::BAR obchgrp::getBAR(string path, int pos){
     Structs::BAR bar;
     FILE * file = NULL;
     file = fopen(path.c_str(), "rb+");
     fseek(file, pos, SEEK_SET);
-    fread(&bar, sizeof(Structs::BC), 1, file);
+    fread(&bar, sizeof(Structs::BAR), 1, file);
     fclose(file);
     return bar;
 }
 
-list<string> oblogin::separar_carpetas(string path) {
+list<string> obchgrp::separar_carpetas(string path) {
     list<string> lista_carpetas;
     char ruta[path.length() + 1];
     strcpy(ruta, path.c_str());
@@ -101,7 +93,7 @@ list<string> oblogin::separar_carpetas(string path) {
     return lista_carpetas;
 }
 
-list<string> oblogin::separar_comas(string path) {
+list<string> obchgrp::separar_comas(string path) {
     list<string> lista_carpetas;
     char ruta[path.length() + 1];
     strcpy(ruta, path.c_str());
@@ -118,21 +110,21 @@ list<string> oblogin::separar_comas(string path) {
     return lista_carpetas;
 }
 
-void oblogin::exec(){
-    if(this->user == ""){
-        cout<<"\nUser invalido"<<endl;
+void obchgrp::exec(){
+    if(this->usr == "" || this->grp == ""){
+        cout<<"\nNombre invalido"<<endl;
         return;
     }
-    if(this->pwd == ""){
-        cout<<"\nPassword invalido"<<endl;
+    if(log.status == 'i'){
+        cout<<"\nNo existe usuario logueado"<<endl;
         return;
     }
-    if(this->id == ""){
-        cout<<"\nID invalido"<<endl;
+    if(log.user != "root"){
+        cout<<"\nSolo el usuario root puede ejecutar este comando"<<endl;
         return;
     }
-    if(log.status == 'h'){
-        cout<<"\nYa se encuentra logueado el usuario : "<<log.user<<endl;
+    if(this->usr.length() > 10 || this->grp.length() > 10){
+        cout<<"\nParametros permitidos con 10 caracteres como maximo"<<endl;
         return;
     }
     bool existe_particion = false;
@@ -140,7 +132,7 @@ void oblogin::exec(){
     int start_particion;
     for (int i = 0; i < 99; i++){
         for (int j = 0; j < 26; j++){
-            if (discos[i].particiones[j].id == this->id){
+            if (discos[i].particiones[j].id == log.id){
                 path_particion = discos[i].path;
                 start_particion = discos[i].particiones[j].start;
                 existe_particion = true;
@@ -166,68 +158,78 @@ void oblogin::exec(){
             usuarios += tmp;
         }
     }
-    list<string> lista_usuarios;
-    list<string> lista_tmp;
+    list<string> lista_archivo;
+    list<string> lista_grupos;
     list<string>::iterator it;
     list<string>::iterator it2;
-    lista_usuarios = this->separar_carpetas(usuarios);
+    lista_archivo = this->separar_carpetas(usuarios);
+    string grupo[3];
     string usuario[5];
-    bool match = false;
-    string grupo;
-    for(it = lista_usuarios.begin(); it != lista_usuarios.end(); it++){
+    string grupos[lista_archivo.size()];
+    bool existe_grp = false;
+    bool existe_usr = false;
+    int numGrup;
+    int c = 0;
+    int pos;
+    string id;
+    string pwd;
+    for(it = lista_archivo.begin(); it != lista_archivo.end(); it++){
         string tmp = *it;
+        grupos[c] = tmp;
         string tmp2;
         tmp2 = tmp[2];
-        if(tmp2 == "U"){
-            lista_tmp = this->separar_comas(tmp);
+        if(tmp2 == "G"){
+            lista_grupos = this->separar_comas(tmp);
             int cont = 0;
-            for(it2 = lista_tmp.begin(); it2 != lista_tmp.end(); it2++){
+            for(it2 = lista_grupos.begin(); it2 != lista_grupos.end(); it2++){
+                string tmp3 = *it2;
+                grupo[cont] = tmp3;
+                cont++;
+            }
+            if(this->grp == grupo[2] && grupo[0] != "0"){
+                 cout<<"Grupo encontrado\n"<<endl;
+                 existe_grp = true;
+            }
+        }else{
+            tmp2 = tmp[0];
+            stringstream convert(tmp2);
+            if(tmp2 != "0"){
+                int x = 0;
+                convert >> x;
+                numGrup = x;
+            }
+            lista_grupos = this->separar_comas(tmp);
+            int cont = 0;
+            for(it2 = lista_grupos.begin(); it2 != lista_grupos.end(); it2++){
                 string tmp3 = *it2;
                 usuario[cont] = tmp3;
                 cont++;
             }
-            if(usuario[0] != "0" && this->user == usuario[3] && this->pwd == usuario[4]){
-                 stringstream convert(usuario[0]);
-                 int x = 0;
-                 convert >> x;
-                 log.uid = x;
-                 grupo = usuario[2];
-                 match = true;
-                 break;
+            if(this->usr == usuario[3] && usuario[0] != "0"){
+                cout<<"Usuario encontrado\n"<<endl;
+                existe_usr = true;
+                pos = c;
+                id = usuario[0];
+                pwd = usuario[4];
             }
         }
+        c++;
     }
-    if(match){
-        log.id = this->id;
-        log.pwd = this->pwd;
-        log.user = this->user;
-        log.status = 'h';
-        cout<<"\nUsuario logueado correctamente"<<endl;
-        for(it = lista_usuarios.begin(); it != lista_usuarios.end(); it++){
-            string tmp = *it;
-            string tmp2;
-            tmp2 = tmp[2];
-            if(tmp2 == "G"){
-                lista_tmp = this->separar_comas(tmp);
-                int cont = 0;
-                for(it2 = lista_tmp.begin(); it2 != lista_tmp.end(); it2++){
-                    string tmp3 = *it2;
-                    usuario[cont] = tmp3;
-                    cont++;
-                }
-                if(usuario[2] == grupo && usuario[0] != "0"){
-                    stringstream convert(usuario[0]);
-                    int x = 0;
-                    convert >> x;
-                    log.guid = x;
-                    cout<<x<<endl;
-                    match = true;
-                    break;
-                }
-            }
+    if(!existe_grp || !existe_usr){
+        cout<<"\nGrupo o usuario no encontrado"<<endl;
+        return;
+    }
+    string content;
+    for(int i = 0; i < lista_archivo.size(); i++){
+        if(i == pos){
+            string tmp = id + ",U," + this->grp + "," + this->usr + "," + pwd + "\n";
+            content += tmp;
+        }else{
+          content += grupos[i] + "\n";
         }
-    }else{
-        cout<<"\nUsuario y/o contraseña incorrectos"<<endl;
-        cout<<"\nNo pudo iniciarse sesion"<<endl;
     }
+    obedit * edit = new obedit();
+    edit->setPath("/user.txt");
+    edit->content = content;
+    edit->exec();
 }

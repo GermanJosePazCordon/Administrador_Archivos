@@ -54,7 +54,6 @@ void obmount::mostrarDatos(){
 }
 
 void obmount::exec(){
-    cout<<"\nMOUNT"<<endl;
     bool isNormal = false;//BOOLEANO PARA DETERMINAR SI LA PARTICION ES PRIMARIA O EXTENDIDA
     bool isLogic = false;//BOOLEANO PARA DETERMINAR SI LA PARTICION ES LOGICA
     if(validarParametros()){

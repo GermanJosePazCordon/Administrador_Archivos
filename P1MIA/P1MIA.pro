@@ -19,8 +19,6 @@ SOURCES += main.cpp \
     obumount.cpp \
     obmkfs.cpp \
     obtouch.cpp \
-    obmkdirr.cpp \
-    obmkdirr.cpp \
     obmkdir.cpp \
     obreporte.cpp \
     obcat.cpp \
@@ -36,7 +34,10 @@ SOURCES += main.cpp \
     obmkgrp.cpp \
     obrmgrp.cpp \
     obmkusr.cpp \
-    obrmusr.cpp
+    obrmusr.cpp \
+    obchgrp.cpp \
+    obloss.cpp \
+    obrecovery.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -80,7 +81,10 @@ HEADERS += \
     obmkgrp.h \
     obrmgrp.h \
     obmkusr.h \
-    obrmusr.h
+    obrmusr.h \
+    obchgrp.h \
+    obloss.h \
+    obrecovery.h
 
 SUBDIRS += \
     P1MIA.pro

@@ -141,7 +141,6 @@ void obfind::addJournaling(string content, string path, string path_paticion, st
     jng_tmp.next = jng_tmp.start + sizeof(Structs::Journaling);
     Structs::SB sb = this->getSB(path_paticion, start);
     if(jng_tmp.next > (sb.bm_inode_start - sizeof(Structs::Journaling))){
-        cout<<"\nEspacio insuficiente para el journaling"<<endl;
         return;
     }
     this->saveJournaling(jng_tmp, path_paticion, jng_tmp.start);
@@ -299,11 +298,13 @@ string obfind::formarRegex(string name){
         } else if (i == '?'){
             regex += "([a-zA-Z0-9]{1})";
         } else {
+            //string caracter(i, 1);
+            regex += "[";
             regex += i;
+            regex += "]";
         }
     }
     regex += ")$";
-
     return regex;
 }
 

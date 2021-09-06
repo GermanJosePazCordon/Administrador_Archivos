@@ -139,7 +139,6 @@ void obmkdir::addJournaling(string content, string path, string path_paticion, s
     jng_tmp.next = jng_tmp.start + sizeof(Structs::Journaling);
     Structs::SB sb = this->getSB(path_paticion, start);
     if(jng_tmp.next > (sb.bm_inode_start - sizeof(Structs::Journaling))){
-        cout<<"\nEspacio insuficiente para el journaling"<<endl;
         return;
     }
     this->saveJournaling(jng_tmp, path_paticion, jng_tmp.start);
@@ -429,7 +428,7 @@ void obmkdir::crearCarpeta(Structs::SB sb, int inodoPadre, int inodoAbuelo, stri
     Structs::TI inodo;
     inodo.type = '0';
     inodo.uid = log.uid;
-    inodo.gid = log.uid;
+    inodo.gid = log.guid;
     inodo.size = 0;
     inodo.block[0] = sb.first_blo;
     inodo.atime = time(0);

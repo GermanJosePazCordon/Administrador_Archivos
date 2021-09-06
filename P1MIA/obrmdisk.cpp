@@ -21,7 +21,6 @@ void obrmdisk::setPath(string path){
 }
 
 void obrmdisk::exec(){
-    cout<<"\nRMDISK"<<endl;
     if(this->path == ""){
         cout<<"\nRuta invalida"<<endl;
         cout<<"\nNo se pudo eliminar el disco"<<endl;

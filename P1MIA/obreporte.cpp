@@ -187,6 +187,122 @@ list<string> obreporte::separar_carpetas(string path) {
     return lista_carpetas;
 }
 
+list<string> obreporte::separar_carpetas2(string path) {
+    list<string> lista_carpetas;
+    char ruta[path.length() + 1];
+    strcpy(ruta, path.c_str());
+    string nombre_carpeta;
+    for (int i = 0; i < path.length() + 1; i++) {
+        if (ruta[i] == '\n') {
+            lista_carpetas.push_back(nombre_carpeta);
+
+            nombre_carpeta.clear();
+            continue;
+        }
+        //cout<<nombre_carpeta<<endl;
+        nombre_carpeta += ruta[i];
+    }
+    return lista_carpetas;
+}
+
+list<string> obreporte::separar_comas(string path) {
+    list<string> lista_carpetas;
+    char ruta[path.length() + 1];
+    strcpy(ruta, path.c_str());
+    string nombre_carpeta;
+    for (int i = 0; i < path.length() + 1; i++) {
+        if (ruta[i] == ',' || i == path.length()) {
+            lista_carpetas.push_back(nombre_carpeta);
+            nombre_carpeta.clear();
+            continue;
+        }
+        //cout<<nombre_carpeta<<endl;
+        nombre_carpeta += ruta[i];
+    }
+    return lista_carpetas;
+}
+
+string obreporte::getOwner(int usr, string path_particion, int start_particion){
+    Structs::SB sb = this->getSB(path_particion, start_particion);
+    Structs::TI inodo = this->getInodo(path_particion, (sb.inode_start + sizeof(Structs::TI)));
+    Structs::BAR archivo;
+    string usuarios;
+    for(int i = 0; i < 15; i++){
+        if(inodo.block[i] != -1 && i < 12){
+            archivo = this->getBAR(path_particion, (sb.block_start + inodo.block[i] * sizeof(Structs::BAR)));
+            string tmp = archivo.content;
+            if(tmp.length() > 64){
+                tmp = tmp.substr(0, 64);
+            }
+            usuarios += tmp;
+        }
+    }
+    list<string> lista_archivo;
+    list<string> lista_grupos;
+    list<string>::iterator it;
+    list<string>::iterator it2;
+    lista_archivo = this->separar_carpetas2(usuarios);
+    string usuario[5];
+    for(it = lista_archivo.begin(); it != lista_archivo.end(); it++){
+        string tmp = *it;
+        string tmp2;
+        tmp2 = tmp[2];
+        if(tmp2 == "U"){
+            tmp2 = tmp[0];
+            lista_grupos = this->separar_comas(tmp);
+            int cont = 0;
+            for(it2 = lista_grupos.begin(); it2 != lista_grupos.end(); it2++){
+                string tmp3 = *it2;
+                usuario[cont] = tmp3;
+                cont++;
+            }
+            if(usuario[0] == to_string(usr)){
+                 return usuario[3];
+            }
+        }
+    }
+}
+
+string obreporte::getGrupo(int grp, string path_particion, int start_particion){
+    Structs::SB sb = this->getSB(path_particion, start_particion);
+    Structs::TI inodo = this->getInodo(path_particion, (sb.inode_start + sizeof(Structs::TI)));
+    Structs::BAR archivo;
+    string usuarios;
+    for(int i = 0; i < 15; i++){
+        if(inodo.block[i] != -1 && i < 12){
+            archivo = this->getBAR(path_particion, (sb.block_start + inodo.block[i] * sizeof(Structs::BAR)));
+            string tmp = archivo.content;
+            if(tmp.length() > 64){
+                tmp = tmp.substr(0, 64);
+            }
+            usuarios += tmp;
+        }
+    }
+    list<string> lista_archivo;
+    list<string> lista_grupos;
+    list<string>::iterator it;
+    list<string>::iterator it2;
+    lista_archivo = this->separar_carpetas2(usuarios);
+    string usuario[3];
+    for(it = lista_archivo.begin(); it != lista_archivo.end(); it++){
+        string tmp = *it;
+        string tmp2;
+        tmp2 = tmp[2];
+        if(tmp2 == "G"){
+            tmp2 = tmp[0];
+            lista_grupos = this->separar_comas(tmp);
+            int cont = 0;
+            for(it2 = lista_grupos.begin(); it2 != lista_grupos.end(); it2++){
+                string tmp3 = *it2;
+                usuario[cont] = tmp3;
+                cont++;
+            }
+            if(usuario[0] == to_string(grp)){
+                return usuario[2];
+            }
+        }
+    }
+}
 
 void obreporte::exec(){
     if(this->path == ""){
@@ -213,6 +329,17 @@ void obreporte::exec(){
         cout<<"\nNo existe una particion con el id : "<<this->id<<endl;
         return;
     }
+    Structs::SB sb_tmp = this->getSB(path_partition, particion.start);
+    char carac;
+    FILE * file = NULL;
+    file = fopen(path_partition.c_str(), "rb+");
+    fseek(file, sb_tmp.bm_inode_start, SEEK_SET);
+    fread(&carac, 1, 1, file);
+    fclose(file);
+    bool nulo = false;
+    if(carac != '1'){
+        nulo = true;
+    }
     if(this->name == "tree"){
         if(this->root < 0){
             cout<<"\nRoot invalido."<<endl;
@@ -221,7 +348,9 @@ void obreporte::exec(){
         string content;
         content +="\ndigraph rep{";
         content +="\nrankdir=LR";
-        content += this->graphInodo(this->root, path_partition, particion.start);
+        if(!nulo){
+            content += this->graphInodo(this->root, path_partition, particion.start);
+        }
         content +="\n}";
         this->generarDot(content);
     }else if(this->name == "mbr"){
@@ -240,7 +369,7 @@ void obreporte::exec(){
     }else if(this->name == "sb"){
         string content;
         content +="\ndigraph rep{";
-        content += this->graphSB(path_partition, particion.start);
+        content += this->graphSB(path_partition, particion.start, nulo);
         content +="\n}";
         this->generarDot(content);
     }else if(this->name == "inode"){
@@ -249,7 +378,9 @@ void obreporte::exec(){
         content+= "\ninode[shape=none, margin=0, label=<";
         content += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
         content += "\n<TR><TD>Index</TD><TD>Tipo</TD><TD>Nombre</TD></TR>";
+        if(!nulo){
         content += this->graphUsedInode(0, "/", path_partition, particion.start);
+        }
         content += "\n</TABLE>>];";
         content +="\n}";
         this->generarDot(content);
@@ -257,19 +388,25 @@ void obreporte::exec(){
         string content;
         content +="\ndigraph rep{";
         content+= "\nrankdir=TB";
+        if(!nulo){
         content += this->graphUsedBlockInode(0, path_partition, particion.start);
+        }
         content +="\n}";
         this->generarDot(content);
     }else if(this->name == "bm_inode"){
         string content;
         content +="\ndigraph rep{";
+        if(!nulo){
         content += this->graphBMInode(path_partition, particion.start);
+        }
         content +="\n}";
         this->generarDot(content);
     }else if(this->name == "bm_block"){
         string content;
         content +="\ndigraph rep{";
+        if(!nulo){
         content += this->graphBMBlock(path_partition, particion.start);
+        }
         content +="\n}";
         this->generarDot(content);
     }else if(this->name == "journaling"){
@@ -283,7 +420,7 @@ void obreporte::exec(){
         content += this->graphJournaling(path_partition, particion.start);
         content +="\n}";
         this->generarDot(content);
-    }else if(this->name == "file"){
+    }else if(this->name == "file" || this->name == "ls"){
         if(this->ruta == ""){
             cout<<"\nRuta del archivo invalida."<<endl;
             return;
@@ -298,6 +435,9 @@ void obreporte::exec(){
         int inodoAbuelo = 0;
         string file_name;
         for(it = lista_carpetas.begin(); it != lista_carpetas.end(); it++){
+            if(this->ruta == "/"){
+                break;
+            }
             file_name = *it;
             bool carpeta_existente = false;
             sb = this->getSB(path_partition, particion.start);
@@ -324,17 +464,33 @@ void obreporte::exec(){
                 continue;
             }
         }
-        sb = this->getSB(path_partition, particion.start);
-        inodo_actual = this->getInodo(path_partition, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
-        if(inodo_actual.type == '0'){
-            cout<<"\nNo existe el archivo : "<<file_name<<endl;
-            return;
+        if(this->name == "file"){
+            sb = this->getSB(path_partition, particion.start);
+            inodo_actual = this->getInodo(path_partition, (sb.inode_start + inodoPadre * sizeof(Structs::TI)));
+            if(inodo_actual.type == '0'){
+                cout<<"\nNo existe el archivo : "<<file_name<<endl;
+                return;
+            }
+            string content;
+            content +="\ndigraph rep{";
+            if(!nulo){
+            content += this->graphFile(path_partition, this->ruta, particion.start, inodoPadre, file_name);
+            }
+            content +="\n}";
+            this->generarDot(content);
+        }else{
+            string content;
+            content +="\ndigraph rep{";
+            content+= "\ninode[shape=none, margin=0, label=<";
+            content += "\n<TABLE BORDER='3' CELLBORDER='2' CELLSPACING='2'>";
+            content += "\n<TR><TD>Permisos</TD><TD>Owner</TD><TD>Grupo</TD><TD>Size</TD><TD>Date</TD><TD>Tipo</TD><TD>Name</TD></TR>";
+            if(!nulo){
+            content += this->graphLs(inodoPadre, this->ruta, path_partition, particion.start);
+            }
+            content += "\n</TABLE>>];";
+            content +="\n}";
+            this->generarDot(content);
         }
-        string content;
-        content +="\ndigraph rep{";
-        content += this->graphFile(path_partition, this->ruta, particion.start, inodoPadre, file_name);
-        content +="\n}";
-        this->generarDot(content);
     }
 }
 
@@ -474,6 +630,10 @@ string obreporte::graphDisk(string path){
                 }else{
                     col = col + 2;
                     start_logic = ebr.next;
+                    libre = ebr.next - (ebr.start + ebr.size);
+                    if(libre != 0){
+                       col = col + 1;
+                    }
                 }
             }
             break;
@@ -556,6 +716,14 @@ string obreporte::graphDisk(string path){
             }else{
                 grafico += "\n<TD ROWSPAN='5'>Logica<BR/>" + to_string(size) + "% del disco</TD>";
                 start_logic = ebr.next;
+                libre = ebr.next - (ebr.start + ebr.size);
+                if(libre != 0){
+                    if(libre < 0){
+                        libre = libre * -1;
+                    }
+                    libre = (100 * libre) / mbr.size;
+                    grafico += "\n<TD ROWSPAN='5'>Libre<BR/>" + to_string(libre) + "% del disco</TD>";
+                }
             }
         }
         grafico +="\n</TR>";
@@ -574,9 +742,9 @@ string obreporte::graphUsedInode(int root, string name, string path, int start){
         tmp = name.substr(0, name.length() - 1);
     }
     if(inodo.type == '0'){
-        grafico += "<TR><TD>" + to_string(root) + "</TD><TD>Folder</TD><TD>" + tmp + "</TD></TR>";
+        grafico += "\n<TR><TD>" + to_string(root) + "</TD><TD>Folder</TD><TD>" + tmp + "</TD></TR>";
     }else{
-        grafico += "<TR><TD>" + to_string(root) + "</TD><TD>Archivo</TD><TD>" + tmp + "</TD></TR>";
+        grafico += "\n<TR><TD>" + to_string(root) + "</TD><TD>Archivo</TD><TD>" + tmp + "</TD></TR>";
     }
     for(int i = 0; i < 15; i++){
         if(inodo.block[i] != -1 && i < 12){
@@ -814,7 +982,7 @@ string obreporte::graphBAR(int bloque, string path, int start){
     return grafico;
 }
 
-string obreporte::graphSB(string path, int start){
+string obreporte::graphSB(string path, int start, bool nulo){
     Structs::SB sb = this->getSB(path, start);
     string grafico;
     grafico += "\nmbr[shape=none, margin=0, label=<";
@@ -822,13 +990,21 @@ string obreporte::graphSB(string path, int start){
     grafico += "\n<TR><TD>Nombre</TD><TD>Valor</TD></TR>";
     grafico += "\n<TR><TD>s_inodes_count</TD><TD>" + to_string(sb.inodes_count) + "</TD></TR>";
     grafico += "\n<TR><TD>s_blocks_count</TD><TD>" + to_string(sb.blocks_count) + "</TD></TR>";
-    grafico += "\n<TR><TD>s_free_blocks_count</TD><TD>" + to_string(sb.free_blocks_count) + "</TD></TR>";
-    grafico += "\n<TR><TD>s_free_inodes_count</TD><TD>" + to_string(sb.free_inodes_count) + "</TD></TR>";
+    if(!nulo){
+        int t = sb.blocks_count - (sb.first_blo);
+        grafico += "\n<TR><TD>s_free_blocks_count</TD><TD>" + to_string(t) + "</TD></TR>";
+        t = sb.inodes_count - (sb.firts_ino);
+        grafico += "\n<TR><TD>s_free_inodes_count</TD><TD>" + to_string(t) + "</TD></TR>";
+    }else{
+        grafico += "\n<TR><TD>s_free_blocks_count</TD><TD>" + to_string(sb.blocks_count) + "</TD></TR>";
+        grafico += "\n<TR><TD>s_free_inodes_count</TD><TD>" + to_string(sb.inodes_count) + "</TD></TR>";
+    }
+    sb.mtime = time(0);
+    sb.umtime = time(0);
     string tmp;
     char date[16];
     strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&sb.mtime));
     tmp = date;
-    sb.umtime = time(0);
     grafico += "\n<TR><TD>s_mtime</TD><TD>" + tmp + "</TD></TR>";
     strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&sb.umtime));
     tmp = date;
@@ -837,8 +1013,13 @@ string obreporte::graphSB(string path, int start){
     grafico += "\n<TR><TD>s_magic</TD><TD>0xEF53</TD></TR>";
     grafico += "\n<TR><TD>s_inode_size</TD><TD>" + to_string(sb.inode_size) + "</TD></TR>";
     grafico += "\n<TR><TD>s_block_size</TD><TD>" + to_string(sb.block_size) + "</TD></TR>";
-    grafico += "\n<TR><TD>s_first_ino</TD><TD>" + to_string(sb.firts_ino) + "</TD></TR>";
-    grafico += "\n<TR><TD>s_first_blo</TD><TD>" + to_string(sb.first_blo) + "</TD></TR>";
+    if(!nulo){
+        grafico += "\n<TR><TD>s_first_ino</TD><TD>" + to_string(sb.firts_ino) + "</TD></TR>";
+        grafico += "\n<TR><TD>s_first_blo</TD><TD>" + to_string(sb.first_blo) + "</TD></TR>";
+    }else{
+        grafico += "\n<TR><TD>s_first_ino</TD><TD>0</TD></TR>";
+        grafico += "\n<TR><TD>s_first_blo</TD><TD>0</TD></TR>";
+    }
     grafico += "\n<TR><TD>s_bm_inode_start</TD><TD>" + to_string(sb.bm_inode_start) + "</TD></TR>";
     grafico += "\n<TR><TD>s_bm_block_start</TD><TD>" + to_string(sb.bm_block_start) + "</TD></TR>";
     grafico += "\n<TR><TD>s_inode_start</TD><TD>" + to_string(sb.inode_start) + "</TD></TR>";
@@ -904,7 +1085,48 @@ string obreporte::graphFile(string path, string ruta, int start, int inodoPadre,
     }
     grafico += "\n<TR><TD>Contenido :</TD><TD>" + content + "</TD></TR>";
     grafico += "\n</TABLE>>];";
-    cout<<grafico<<endl;
+    return grafico;
+}
+
+string obreporte::graphLs(int root, string name, string path, int start){
+    Structs::SB sb = this->getSB(path, start);
+    Structs::TI inodo = this->getInodo(path, (sb.inode_start + root * sizeof(Structs::TI)));
+    Structs::BC bc;
+    string grafico;
+    string tmp = name;
+    if(name != "/"){
+        tmp = name.substr(1, name.length() - 1);
+        string tmp2;
+        tmp2 = tmp[0];
+        if(tmp2 != "/"){
+            tmp = "/" + tmp;
+        }
+    }
+    string owner = this->getOwner(inodo.uid, path, start);
+    string grupo = this->getGrupo(inodo.gid, path, start);
+    string dates;
+    char date[16];
+    strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&inodo.ctime));
+    dates = date;
+    if(inodo.type == '0'){
+        grafico += "\n<TR><TD>-rw-rw-r--</TD><TD>" + owner + "</TD><TD>" + grupo + "</TD><TD>0</TD><TD>" + dates + "</TD><TD>Folder</TD><TD>" + tmp + "</TD></TR>";
+    }else{
+        grafico += "\n<TR><TD>-rw-rw-r--</TD><TD>" + owner + "</TD><TD>" + grupo + "</TD><TD>" + to_string(inodo.size) + "</TD><TD>" + dates + "</TD><TD>Archivo</TD><TD>" + tmp + "</TD></TR>";
+    }
+    for(int i = 0; i < 15; i++){
+        if(inodo.block[i] != -1 && i < 12){
+            if(inodo.type == '0'){
+                bc = this->getBC(path, (sb.block_start + inodo.block[i] * sizeof(Structs::BC)));
+                for(int j = 0; j < 4; j++){
+                    tmp = bc.content[j].name;
+                    if(bc.content[j].inodo != -1 && tmp != "." && tmp != ".."){
+                        string tmp2 = name + "/" +tmp  ;
+                        grafico += this->graphLs(bc.content[j].inodo, tmp2, path, start);
+                    }
+                }
+            }
+        }else{/*INDIRECTO*/}
+    }
     return grafico;
 }
 
