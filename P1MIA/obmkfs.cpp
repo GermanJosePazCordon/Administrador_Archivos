@@ -199,7 +199,7 @@ void obmkfs::exec(){
     strcpy(carpeta.content[1].name, "..");
     //USERS
     carpeta.content[2].inodo = 1;
-    strcpy(carpeta.content[2].name, "user.txt");
+    strcpy(carpeta.content[2].name, "users.txt");
     //GUARDANDO LA CARPETA
     file = fopen(discoMontado.path.c_str(), "rb+");
     fseek(file, sb.block_start, SEEK_SET);
@@ -207,7 +207,7 @@ void obmkfs::exec(){
     fclose(file);
     //CREANDO EL ARCHIVO INICIAL
     if(this->fs == "3fs"){
-        addJournaling("1,G,root\n1,U,root,root,123\n", "/user.txt", discoMontado.path, "mkfs", '1', -1, (particion.start + sizeof(Structs::SB)));
+        addJournaling("1,G,root\n1,U,root,root,123\n", "/users.txt", discoMontado.path, "mkfs", '1', -1, (particion.start + sizeof(Structs::SB)));
     }
     //INODO ARCHIVO
     inodo.type = '1';

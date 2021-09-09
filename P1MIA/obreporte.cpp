@@ -1052,6 +1052,7 @@ string obreporte::graphJournaling(string path, int start){
         char date[16];
         strftime(date, 20, "%d/%m/%Y %H:%M", localtime(&jng.date));
         string dates = date;
+        string name = jng.path;
         grafico += "\n<TR><TD>" + op + "</TD><TD>" + tipo + "</TD><TD>" + name + "</TD><TD>" + dates + "</TD><TD>" + cont + "</TD></TR>";
         if(jng.next == -1){
             seguimos = false;

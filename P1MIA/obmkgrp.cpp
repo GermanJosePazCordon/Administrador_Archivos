@@ -173,7 +173,7 @@ void obmkgrp::exec(){
                 grupo[cont] = tmp3;
                 cont++;
             }
-            if(this->name == grupo[2] && grupo[0] == "1"){
+            if(this->name == grupo[2] && grupo[0] != "0"){
                  cout<<"\nYa existe el grupo : "<<grupo[2]<<endl;
                  return;
             }
@@ -181,7 +181,7 @@ void obmkgrp::exec(){
     }
     usuarios += to_string(numGrup + 1) + ",G," + this->name + "\n";
     obedit * edit = new obedit();
-    edit->setPath("/user.txt");
+    edit->setPath("/users.txt");
     edit->content = usuarios;
     edit->exec();
 }

@@ -49,11 +49,16 @@ void obrecovery::exec(){
         return;
     }
     Structs::SB sb;
+    FILE * file = NULL;
+    file = fopen(path_particion.c_str(), "rb+");
+    fseek(file, start_particion, SEEK_SET);
+    fread(&sb, sizeof(Structs::SB), 1, file);
+    fclose(file);
     if(sb.filesystem_type == 2){
         cout<<"\nSistema de archivos EXT2"<<endl;
         return;
     }
-    FILE * file = NULL;
+
     file = fopen(path_particion.c_str(), "rb+");
     fseek(file, start_particion, SEEK_SET);
     fread(&sb, sizeof(Structs::SB), 1, file);
@@ -63,4 +68,8 @@ void obrecovery::exec(){
     fseek(file, sb.bm_inode_start, SEEK_SET);
     fwrite("1", 1, 1, file);
     fclose(file);
+
+    for(int i = sb.inode_start; i < (sb.block_start + sb.blocks_count); i++){
+
+    }
 }

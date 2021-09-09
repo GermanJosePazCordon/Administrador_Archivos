@@ -59,4 +59,8 @@ void obloss::exec(){
     fseek(file, sb.bm_inode_start, SEEK_SET);
     fwrite("\0", 1, 1, file);
     fclose(file);
+
+    for(int i = sb.inode_start; i < (sb.block_start + sb.blocks_count); i++){
+
+    }
 }

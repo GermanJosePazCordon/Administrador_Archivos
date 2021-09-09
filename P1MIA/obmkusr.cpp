@@ -208,7 +208,7 @@ void obmkusr::exec(){
                 cont++;
             }
             if(this->usr == usuario[3] && usuario[0] != "0"){
-                 cout<<"\nUsuario encontrado"<<endl;
+                 cout<<"\nYa existe el usuario : "<<this->usr<<endl;
                  return;
             }
         }
@@ -219,7 +219,7 @@ void obmkusr::exec(){
     }
     usuarios += to_string(numGrup + 1) + ",U," + this->grp + "," + this->usr + "," + this->pwd + "\n";
     obedit * edit = new obedit();
-    edit->setPath("/user.txt");
+    edit->setPath("/users.txt");
     edit->content = usuarios;
     edit->exec();
 }

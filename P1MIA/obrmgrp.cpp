@@ -191,7 +191,7 @@ void obrmgrp::exec(){
         }
     }
     obedit * edit = new obedit();
-    edit->setPath("/user.txt");
+    edit->setPath("/users.txt");
     edit->content = content;
     edit->exec();
 }
